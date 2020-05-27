@@ -22,6 +22,7 @@ pub async fn show_entry(data: Data, tail: Tail) -> Result<impl Reply, Rejection>
     let mut rendered = String::new();
     pulldown_cmark::html::push_html(&mut rendered, pulldown_cmark::Parser::new(&md));
 
+    // FIXME:
     Ok(warp::reply::html(
         templates::WikiPage {
             title: "fish",
