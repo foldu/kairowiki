@@ -1,0 +1,25 @@
+[package]
+name = "kairowiki"
+version = "0.1.0"
+authors = ["foldu <foldu@protonmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+warp = "0.2.3"
+tokio = { version = "0.2.21", features = ["rt-threaded", "sync"] }
+snafu = "0.6.8"
+git2 = "0.13.6"
+envy = "0.4.1"
+serde = { version = "1.0.110", features = ["derive"] }
+tracing = "0.1.14"
+tracing-futures = "0.2.4"
+sqlx = { version = "0.3.5", default-features = false, features = ["sqlite", "runtime-tokio", "macros"] }
+derive_more = "0.99.7"
+rust-argon2 = "0.8.2"
+anyhow = "1.0.31"
+pulldown-cmark = "0.7.1"
+askama = "0.9.0"
+thiserror = "1.0.19"
+tracing-subscriber = "0.2.5"
