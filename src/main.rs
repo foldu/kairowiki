@@ -8,7 +8,7 @@ use warp::{http::Uri, Filter};
 
 async fn run() -> Result<(), anyhow::Error> {
     let _subscriber = tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::TRACE) // completes the builder and sets the constructed `Subscriber` as the default.
+        .with_max_level(tracing::Level::TRACE)
         .init();
 
     let data = data::Data::from_env().await?;
