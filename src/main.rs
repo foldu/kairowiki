@@ -1,5 +1,6 @@
 mod data;
 mod error;
+mod forms;
 mod handlers;
 mod password;
 mod session;
@@ -45,12 +46,20 @@ async fn run() -> Result<(), anyhow::Error> {
     let login_form = login_path
         .and(warp::get())
         .map(render_template!(templates::Login {}));
+    let login_post = login_path
+        .and(warp::post())
+        .and(data_filter.clone())
+        .and(form_size_limit)
+        .and(warp::filters::body::form())
+        .and_then(handlers::login);
 
     let routes = home
         .or(wiki_home)
         .or(wiki_entries)
         .or(register_form)
-        .or(register_post);
+        .or(register_post)
+        .or(login_form)
+        .or(login_post);
 
     warp::serve(routes.recover(handlers::handle_rejection))
         .run(([0, 0, 0, 0], port))

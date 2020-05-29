@@ -1,4 +1,4 @@
-use crate::{data::Data, error::Error, templates, user_storage};
+use crate::{data::Data, error::Error, forms, templates, user_storage};
 use askama::Template;
 use std::path::Path;
 use warp::{path::Tail, reject, Rejection, Reply};
@@ -33,23 +33,8 @@ pub async fn show_entry(data: Data, tail: Tail) -> Result<impl Reply, Rejection>
     ))
 }
 
-#[derive(serde::Deserialize)]
-pub struct RegisterForm {
-    name: String,
-    email: String,
-    password: String,
-}
-
-pub async fn register(data: Data, form: RegisterForm) -> Result<impl Reply, Rejection> {
-    let pass_hash = user_storage::PasswordHash::from_password(&form.password);
-
-    let user_record = user_storage::NewUser {
-        name: form.name,
-        email: form.email,
-        pass_hash,
-    };
-
-    match data.user_storage.register(&user_record).await {
+pub async fn register(data: Data, form: forms::Register) -> Result<impl Reply, Rejection> {
+    match data.user_storage.register(&form).await {
         Err(user_storage::Error::UserExists) => unimplemented!(),
         Err(user_storage::Error::EmailExists) => unimplemented!(),
         other => other.map_err(reject::custom).map(|_| {
@@ -61,13 +46,7 @@ pub async fn register(data: Data, form: RegisterForm) -> Result<impl Reply, Reje
     }
 }
 
-#[derive(serde::Deserialize)]
-pub struct LoginForm {
-    name: String,
-    password: String,
-}
-
-pub async fn login(data: Data, form: LoginForm) -> Result<impl warp::Reply, Rejection> {
+pub async fn login(data: Data, form: forms::Login) -> Result<impl warp::Reply, Rejection> {
     data.user_storage
         .check_credentials(&form.name, &form.password)
         .await
