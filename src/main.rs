@@ -1,7 +1,10 @@
 mod data;
 mod error;
 mod handlers;
+mod password;
+mod session;
 mod templates;
+mod user_storage;
 
 use tokio::runtime;
 use warp::{http::Uri, Filter};
@@ -12,7 +15,9 @@ async fn run() -> Result<(), anyhow::Error> {
         .init();
 
     let data = data::Data::from_env().await?;
+    let port = data.port;
     let data_filter = warp::any().map(move || data.clone());
+    let form_size_limit = warp::body::content_length_limit(1 << 10);
 
     let home = warp::get().and(warp::path::end()).map(|| "Home page");
 
@@ -21,13 +26,34 @@ async fn run() -> Result<(), anyhow::Error> {
         .and(warp::path::end())
         .map(|| warp::redirect(Uri::from_static("/")));
     let wiki_entries = wiki
-        .and(data_filter)
+        .and(data_filter.clone())
         .and(warp::path::tail())
         .and_then(handlers::show_entry);
 
-    let routes = home.or(wiki_home).or(wiki_entries);
+    let register_path = warp::path("register").and(warp::path::end());
+    let register_form = register_path
+        .and(warp::get())
+        .map(render_template!(templates::Register {}));
+    let register_post = register_path
+        .and(warp::post())
+        .and(data_filter.clone())
+        .and(form_size_limit)
+        .and(warp::filters::body::form())
+        .and_then(handlers::register);
+
+    let login_path = warp::path("login").and(warp::path::end());
+    let login_form = login_path
+        .and(warp::get())
+        .map(render_template!(templates::Login {}));
+
+    let routes = home
+        .or(wiki_home)
+        .or(wiki_entries)
+        .or(register_form)
+        .or(register_post);
+
     warp::serve(routes.recover(handlers::handle_rejection))
-        .run(([0, 0, 0, 0], 8080))
+        .run(([0, 0, 0, 0], port))
         .await;
 
     Ok(())

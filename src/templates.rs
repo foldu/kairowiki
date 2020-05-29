@@ -8,6 +8,18 @@ pub struct WikiPage<'a> {
 }
 
 #[derive(Template)]
+#[template(path = "login.html")]
+pub struct Login {}
+
+#[derive(Template)]
+#[template(path = "register.html")]
+pub struct Register {}
+
+#[derive(Template)]
+#[template(path = "register_refresh.html")]
+pub struct RegisterRefresh {}
+
+#[derive(Template)]
 #[template(path = "error.html")]
 pub struct Error<'a> {
     code: u16,

@@ -1,9 +1,9 @@
-use crate::{data::Data, error::Error, templates};
+use crate::{data::Data, error::Error, templates, user_storage};
 use askama::Template;
 use std::path::Path;
 use warp::{path::Tail, reject, Rejection, Reply};
 
-fn template<T>(template: T) -> impl warp::Reply
+pub fn template<T>(template: T) -> impl warp::Reply
 where
     T: Template,
 {
@@ -33,6 +33,63 @@ pub async fn show_entry(data: Data, tail: Tail) -> Result<impl Reply, Rejection>
     ))
 }
 
+#[derive(serde::Deserialize)]
+pub struct RegisterForm {
+    name: String,
+    email: String,
+    password: String,
+}
+
+pub async fn register(data: Data, form: RegisterForm) -> Result<impl Reply, Rejection> {
+    let pass_hash = user_storage::PasswordHash::from_password(&form.password);
+
+    let user_record = user_storage::NewUser {
+        name: form.name,
+        email: form.email,
+        pass_hash,
+    };
+
+    match data.user_storage.register(&user_record).await {
+        Err(user_storage::Error::UserExists) => unimplemented!(),
+        Err(user_storage::Error::EmailExists) => unimplemented!(),
+        other => other.map_err(reject::custom).map(|_| {
+            warp::reply::with_status(
+                template(templates::RegisterRefresh {}),
+                warp::http::StatusCode::CREATED,
+            )
+        }),
+    }
+}
+
+#[derive(serde::Deserialize)]
+pub struct LoginForm {
+    name: String,
+    password: String,
+}
+
+pub async fn login(data: Data, form: LoginForm) -> Result<impl warp::Reply, Rejection> {
+    data.user_storage
+        .check_credentials(&form.name, &form.password)
+        .await
+        .map_err(reject::custom)?;
+
+    // TODO: set cookie headers
+
+    Ok(warp::redirect(warp::http::Uri::from_static("/")))
+}
+
+#[macro_export]
+macro_rules! render_template {
+    ($e:expr) => {
+        || {
+            fn inner() -> impl warp::Reply {
+                Ok(crate::handlers::template($e))
+            }
+            inner()
+        }
+    };
+}
+
 pub async fn handle_rejection(
     err: Rejection,
 ) -> Result<impl warp::Reply, std::convert::Infallible> {
@@ -42,7 +99,13 @@ pub async fn handle_rejection(
         match error {
             Error::Io(_) => templates::Error::internal_server(),
         }
-    } else {
+    }
+    // TODO:
+    //else if let Some(error) = err.find::<db::Error>() {
+    //}
+    else {
+        // FIXME: should use display
+        tracing::error!("{:?}", err);
         templates::Error::internal_server()
     };
 

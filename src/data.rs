@@ -14,23 +14,17 @@ impl Data {
         let cfg: Config = envy::from_env()?;
         mkdir_p(&cfg.git_repo)?;
 
-        if let Some(parent) = Path::new(&cfg.db_file).parent() {
-            mkdir_p(parent)?;
-        }
+        let storage =
+            crate::user_storage::SqliteStorage::open(&cfg.db_file, cfg.db_pool_size).await?;
 
         let _ = std::fs::create_dir_all(&cfg.git_repo);
         let repo = Repository::discover(&cfg.git_repo)?;
 
-        let url = format!("sqlite://{}", cfg.db_file);
-        let pool = SqlitePool::builder()
-            .max_size(cfg.db_pool_size)
-            .build(&url)
-            .await?;
-
         Ok(Self(Arc::new(DataInner {
-            pool,
+            user_storage: Box::new(storage),
             repo: Mutex::new(repo),
             repo_path: PathBuf::from(cfg.git_repo),
+            port: cfg.port,
         })))
     }
 }
@@ -50,8 +44,9 @@ fn mkdir_p(path: impl AsRef<Path>) -> Result<(), anyhow::Error> {
 
 pub struct DataInner {
     pub repo: Mutex<git2::Repository>,
-    pub pool: sqlx::SqlitePool,
+    pub user_storage: Box<dyn crate::user_storage::UserStorage>,
     pub repo_path: PathBuf,
+    pub port: u16,
 }
 
 #[derive(serde::Deserialize)]
@@ -64,6 +59,9 @@ struct Config {
 
     #[serde(default = "default_db_pool_size")]
     db_pool_size: u32,
+
+    #[serde(default = "default_port")]
+    port: u16,
 }
 
 fn default_repo() -> PathBuf {
@@ -76,4 +74,8 @@ fn default_db_file() -> String {
 
 fn default_db_pool_size() -> u32 {
     4
+}
+
+fn default_port() -> u16 {
+    8080
 }
