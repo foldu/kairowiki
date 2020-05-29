@@ -1,4 +1,4 @@
-use crate::{data::Data, error::Error, forms, templates, user_storage};
+use crate::{data::Data, error::Error, forms, session::Sessions, templates, user_storage};
 use askama::Template;
 use std::path::Path;
 use warp::{path::Tail, reject, Rejection, Reply};
@@ -46,15 +46,28 @@ pub async fn register(data: Data, form: forms::Register) -> Result<impl Reply, R
     }
 }
 
-pub async fn login(data: Data, form: forms::Login) -> Result<impl warp::Reply, Rejection> {
-    data.user_storage
+pub async fn login(
+    data: Data,
+    sessions: Sessions,
+    form: forms::Login,
+) -> Result<impl warp::Reply, Rejection> {
+    let user_id = data
+        .user_storage
         .check_credentials(&form.name, &form.password)
         .await
         .map_err(reject::custom)?;
 
-    // TODO: set cookie headers
+    let (uuid, expiry_time) = sessions.login(user_id).await;
+    let cookie = cookie::CookieBuilder::new("warp-session", format!("{}", uuid))
+        .max_age(expiry_time)
+        .finish();
 
-    Ok(warp::redirect(warp::http::Uri::from_static("/")))
+    Ok(warp::http::Response::builder()
+        .status(301)
+        .header("Set-Cookie", format!("{}", cookie))
+        .header("Location", "/")
+        .body("")
+        .unwrap())
 }
 
 #[macro_export]

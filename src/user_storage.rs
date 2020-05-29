@@ -5,8 +5,11 @@ pub use sqlite::SqliteStorage;
 pub trait UserStorage: Sync + Send {
     async fn register(&self, info: &crate::forms::Register) -> Result<(), Error>;
 
-    async fn check_credentials(&self, name: &str, pass: &str) -> Result<(), Error>;
+    async fn check_credentials(&self, name: &str, pass: &str) -> Result<UserId, Error>;
 }
+
+#[derive(Debug, Clone, Copy, PartialOrd, Ord, Eq, PartialEq)]
+pub struct UserId(i32);
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {

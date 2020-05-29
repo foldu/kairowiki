@@ -76,8 +76,8 @@ impl super::UserStorage for SqliteStorage {
         }
     }
 
-    async fn register(&self, info: &crate::forms::Register) -> Result<(), super::Error> {
-        let cxn = self.0.acquire().await?;
+    async fn register(&self, info: &crate::forms::Register) -> Result<super::UserId, super::Error> {
+        let mut cxn = self.0.acquire().await?;
         let hash = PasswordHash::from_password(&info.password);
 
         sqlx::query!(
@@ -86,10 +86,14 @@ impl super::UserStorage for SqliteStorage {
             &info.email,
             hash.as_ref()
         )
-        .execute(cxn)
+        .execute(&mut *cxn)
         .await?;
 
-        Ok(())
+        let id = sqlx::query!("SELECT id FROM wiki_user WHERE name = ?", info.name)
+            .fetch_one(&mut *cxn)
+            .await?;
+
+        Ok(super::UserId(id.id))
     }
 }
 

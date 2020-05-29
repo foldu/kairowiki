@@ -1,3 +1,4 @@
+use crate::user_storage::UserId;
 use std::{collections::BTreeMap, sync::Arc, time::Duration};
 use time::OffsetDateTime;
 use tokio::{stream::StreamExt, sync::RwLock};
@@ -25,7 +26,7 @@ impl Sessions {
 }
 
 impl Sessions {
-    pub async fn login(&self, user_id: i32) -> Uuid {
+    pub async fn login(&self, user_id: UserId) -> (Uuid, time::Duration) {
         let ret = Uuid::new_v4();
         let mut storage = self.0.write().await;
         let stale_session = storage
@@ -35,15 +36,27 @@ impl Sessions {
 
         if let Some(stale_session) = stale_session {
             storage.sessions.remove(&stale_session);
+        } else {
+            storage.users_logged_in.insert(user_id, ret);
         }
 
-        ret
+        let now = time::OffsetDateTime::now_utc();
+
+        let expiry = storage.sessions.insert(
+            ret,
+            SessionData {
+                user_id,
+                expiry: now + time::Duration::seconds(3600),
+            },
+        );
+
+        (ret, time::Duration::seconds(3600))
     }
 
-    pub async fn get_user_id(&self, session_id: Uuid) -> Option<i32> {
+    pub async fn get_user_id(&self, session_id: Uuid) -> Option<UserId> {
         enum Id {
             Expired,
-            Live(i32),
+            Live(UserId),
         }
 
         let user_id = {
@@ -75,7 +88,7 @@ impl Sessions {
 #[derive(Default)]
 pub struct SessionInner {
     sessions: BTreeMap<Uuid, SessionData>,
-    users_logged_in: BTreeMap<i32, Uuid>,
+    users_logged_in: BTreeMap<UserId, Uuid>,
 }
 
 impl SessionInner {
@@ -85,7 +98,7 @@ impl SessionInner {
         }
     }
 
-    fn remove_user(&mut self, user_id: i32) {
+    fn remove_user(&mut self, user_id: UserId) {
         if let Some(session_id) = self.users_logged_in.remove(&user_id) {
             self.sessions.remove(&session_id);
         }
@@ -115,7 +128,7 @@ impl SessionInner {
 }
 
 pub struct SessionData {
-    user_id: i32,
+    user_id: UserId,
     expiry: OffsetDateTime,
 }
 
@@ -124,3 +137,18 @@ impl SessionData {
         self.expiry < now
     }
 }
+
+#[derive(Debug, thiserror::Error)]
+pub enum Error {
+    #[error("Received invalid cookie")]
+    CorruptedCookie,
+}
+
+//pub fn session_required(
+//) -> impl warp::Filter<Extract = (uuid::Uuid,), Error = warp::Rejection> + Copy {
+//    warp::filters::cookie::cookie("warp-session").map(|cont| {
+//        let uuid = uuid::Uuid::parse_str(cont)
+//            .map_err(|_| warp::reject::custom(Error::CorruptedCookie))?;
+//        Ok(uuid)
+//    })
+//}
