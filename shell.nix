@@ -5,6 +5,7 @@ pkgs.mkShell rec {
   buildInputs = with pkgs; [
     openssl
     pkg-config
+    sqlite
   ];
 
   DB_FILE = "./data/db/db.sqlite";

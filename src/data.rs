@@ -62,6 +62,9 @@ struct Config {
 
     #[serde(default = "default_port")]
     port: u16,
+
+    #[serde(default = "default_static_dir")]
+    static_dir: PathBuf,
 }
 
 fn default_repo() -> PathBuf {
@@ -78,4 +81,8 @@ fn default_db_pool_size() -> u32 {
 
 fn default_port() -> u16 {
     8080
+}
+
+fn default_static_dir() -> PathBuf {
+    PathBuf::from("/data/static")
 }

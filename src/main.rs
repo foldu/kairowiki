@@ -17,10 +17,11 @@ async fn run() -> Result<(), anyhow::Error> {
 
     let data = data::Data::from_env().await?;
     let port = data.port;
+    let static_ = warp::path("static").and(warp::fs::dir(&data.static_dir));
     let data_filter = warp::any().map(move || data.clone());
     let form_size_limit = warp::body::content_length_limit(1 << 10);
     let sessions = session::Sessions::new(std::time::Duration::from_secs(5 * 60));
-    let sessions_filter = warp::any().map(move || sessions.clone());
+    let sessions = warp::any().map(move || sessions.clone());
 
     let home = warp::get().and(warp::path::end()).map(|| "Home page");
 
@@ -51,7 +52,7 @@ async fn run() -> Result<(), anyhow::Error> {
     let login_post = login_path
         .and(warp::post())
         .and(data_filter.clone())
-        .and(sessions_filter.clone())
+        .and(sessions.clone())
         .and(form_size_limit)
         .and(warp::filters::body::form())
         .and_then(handlers::login);
@@ -62,7 +63,8 @@ async fn run() -> Result<(), anyhow::Error> {
         .or(register_form)
         .or(register_post)
         .or(login_form)
-        .or(login_post);
+        .or(login_post)
+        .or(static_);
 
     warp::serve(routes.recover(handlers::handle_rejection))
         .run(([0, 0, 0, 0], port))
