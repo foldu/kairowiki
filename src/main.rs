@@ -17,7 +17,8 @@ async fn run() -> Result<(), anyhow::Error> {
 
     let data = data::Data::from_env().await?;
     let port = data.port;
-    let static_ = warp::path("static").and(warp::fs::dir(&data.static_dir));
+    let static_ = warp::path("static").and(warp::fs::dir(data.static_dir.clone()));
+
     let data_filter = warp::any().map(move || data.clone());
     let form_size_limit = warp::body::content_length_limit(1 << 10);
     let sessions = session::Sessions::new(std::time::Duration::from_secs(5 * 60));

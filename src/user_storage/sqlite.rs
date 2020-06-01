@@ -54,29 +54,34 @@ impl SqliteStorage {
 
 #[async_trait::async_trait]
 impl super::UserStorage for SqliteStorage {
-    async fn check_credentials(&self, name: &str, pass: &str) -> Result<(), super::Error> {
+    async fn check_credentials(
+        &self,
+        name: &str,
+        pass: &str,
+    ) -> Result<super::UserId, super::Error> {
         let mut cxn = self.0.acquire().await?;
 
-        let hash = match sqlx::query!("SELECT pass_hash FROM wiki_user WHERE name = ?", name)
-            .fetch_optional(&mut cxn)
-            .await
-            .map(|row| row.map(|row| row.pass_hash))
-        {
-            Ok(Some(hash)) => {
-                Ok(PasswordHash::from_vec(hash).expect("Invalid password in database"))
-            }
-            Ok(None) => Err(super::Error::UserDoesNotExist),
-            Err(e) => Err(e.into()),
-        }?;
+        let (id, hash) =
+            match sqlx::query!("SELECT id, pass_hash FROM wiki_user WHERE name = ?", name)
+                .fetch_optional(&mut cxn)
+                .await
+            {
+                Ok(Some(row)) => Ok((
+                    row.id,
+                    PasswordHash::from_vec(row.pass_hash).expect("Invalid password in database"),
+                )),
+                Ok(None) => Err(super::Error::UserDoesNotExist),
+                Err(e) => Err(e.into()),
+            }?;
 
         if hash.verify(pass) {
-            Ok(())
+            Ok(super::UserId(id))
         } else {
             Err(super::Error::InvalidPassword)
         }
     }
 
-    async fn register(&self, info: &crate::forms::Register) -> Result<super::UserId, super::Error> {
+    async fn register(&self, info: &crate::forms::Register) -> Result<(), super::Error> {
         let mut cxn = self.0.acquire().await?;
         let hash = PasswordHash::from_password(&info.password);
 
@@ -89,11 +94,7 @@ impl super::UserStorage for SqliteStorage {
         .execute(&mut *cxn)
         .await?;
 
-        let id = sqlx::query!("SELECT id FROM wiki_user WHERE name = ?", info.name)
-            .fetch_one(&mut *cxn)
-            .await?;
-
-        Ok(super::UserId(id.id))
+        Ok(())
     }
 }
 

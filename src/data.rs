@@ -25,6 +25,7 @@ impl Data {
             repo: Mutex::new(repo),
             repo_path: PathBuf::from(cfg.git_repo),
             port: cfg.port,
+            static_dir: cfg.static_dir,
         })))
     }
 }
@@ -47,6 +48,7 @@ pub struct DataInner {
     pub user_storage: Box<dyn crate::user_storage::UserStorage>,
     pub repo_path: PathBuf,
     pub port: u16,
+    pub static_dir: PathBuf,
 }
 
 #[derive(serde::Deserialize)]
