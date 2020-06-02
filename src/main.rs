@@ -1,8 +1,8 @@
 #[macro_use]
 mod macros;
+mod article;
 mod data;
 mod error;
-mod filters;
 mod forms;
 mod handlers;
 mod session;
@@ -71,7 +71,7 @@ async fn run() -> Result<(), anyhow::Error> {
         .map(|| warp::redirect(Uri::from_static("/")));
     let wiki_route = data_filter
         .clone()
-        .and(crate::filters::wiki_article(data.clone()));
+        .and(crate::article::wiki_article(data.clone()));
 
     let wiki_entries = wiki
         .and(wiki_route.clone())
@@ -90,19 +90,19 @@ async fn run() -> Result<(), anyhow::Error> {
     let register_form = register_path
         .and(warp::get())
         .and(data_filter.clone())
-        .and_then(handlers::register_form);
+        .and_then(handlers::auth::register_form);
     let register_post = register_path
         .and(warp::post())
         .and(data_filter.clone())
         .and(form_size_limit)
         .and(warp::filters::body::form())
-        .and_then(handlers::register);
+        .and_then(handlers::auth::register);
 
     let login_path = warp::path("login").and(warp::path::end());
     let login_form = login_path
         .and(warp::get())
         .and(data_filter.clone())
-        .and_then(handlers::login_form);
+        .and_then(handlers::auth::login_form);
     let login_post = login_path
         .and(warp::post())
         .and(data_filter.clone())
@@ -110,7 +110,7 @@ async fn run() -> Result<(), anyhow::Error> {
         .and(form_size_limit)
         .and(warp::filters::body::form())
         .and(warp::query())
-        .and_then(handlers::login);
+        .and_then(handlers::auth::login);
 
     let routes = routes! {
         home,

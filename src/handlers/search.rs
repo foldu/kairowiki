@@ -1,4 +1,4 @@
-use crate::{data::Data, templates};
+use crate::{article::ArticleTitle, data::Data, templates};
 use std::{
     fs::Metadata,
     path::{Path, PathBuf},
@@ -50,8 +50,7 @@ pub async fn search_repo(
     let re = regex::Regex::new(&format!("(?i){}", regex::escape(&query.query))).unwrap();
     let found = search(data.config.git_repo.clone(), |path, meta| {
         if meta.is_file() {
-            let title =
-                crate::filters::ArticleTitle::from_path(&data.config.git_repo, path).ok()?;
+            let title = ArticleTitle::from_path(&data.config.git_repo, path).ok()?;
             if re.is_match(title.as_ref()) {
                 Some(title)
             } else {

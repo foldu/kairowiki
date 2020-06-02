@@ -40,7 +40,7 @@ impl<'a> Register<'a> {
 pub struct SearchResults<'a> {
     pub wiki: Wiki<'a>,
     pub query: &'a str,
-    pub results: &'a [crate::filters::ArticleTitle],
+    pub results: &'a [crate::article::ArticleTitle],
 }
 
 #[derive(Template)]

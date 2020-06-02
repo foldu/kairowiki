@@ -1,4 +1,4 @@
-use crate::{data::Data, error::Error, filters::WikiArticle, templates};
+use crate::{article::WikiArticle, data::Data, error::Error, templates};
 use warp::{
     reject::{self, Rejection},
     Reply,
