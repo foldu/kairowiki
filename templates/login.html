@@ -1,15 +1,22 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <title>aaaaa</title>
-</head>
+{% extends "generic.html" %}
 
-<body>
-    <form action="/login" method="POST">
-        <input type="text" id="name" name="name">
-        <input type="password" id="password" name="password">
-        <input type="submit" value="Login">
+{% block content %}
+<!--- action intentionally left out  --->
+<main class="flex-centered">
+    <form method="POST">
+        <ul class="vertical-form-list">
+            <li>
+                <label for="name">Name</label>
+                <input type="text" id="name" name="name" required>
+            </li>
+            <li>
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required>
+            </li>
+            <li>
+                <input type="submit" value="Login">
+            </li>
     </form>
-</body>
-</html>
+    <a href="/register">Register</a>
+</main>
+{% endblock %}

@@ -1,19 +1,17 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" http-equiv="refresh" content="5; url=/">>
-  <title>aaaaa</title>
-</head>
+{% extends "generic.html" %}
+{% block title %} {{ wiki.name }} - {{ title }} {% endblock %}
 
-<body>
-    <nav>
-    </nav>
-    <main>
-        <h1>{{ title }}</h1>
+{% block content %}
+<main id="wiki-article">
+    <div id="wiki-article-head" class="center-padded">
+        <h1 class="wiki-article-title">{{ title }}</h1>
+        <div class="buttons">
+            <a href="{{ title }}/edit"><button>Edit</button></a>
+            <a href="{{ title }}/history"><button>History</button></a>
+        </div>
+    </div>
+    <article class="center-padded">
         {{ content|safe }}
-    </main>
-    <footer>
-        fotoer
-    </footer>
-</body>
-</html>
+    </article>
+</main>
+{% endblock %}

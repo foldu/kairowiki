@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>{% block title %} {{ wiki.name }} {% endblock %}</title>
+    <link rel="stylesheet" href="/static/style.css">
+    {% block head %} {% endblock %}
+</head>
+
+<body>
+    <nav>
+        <ul>
+            <li>
+                <a href="/">
+                    <img src="{{wiki.logo}}" alt="logo" height="100px">
+                </a>
+            </li>
+            <li>
+                <form id="searchbox" method="GET" action="/">
+                    <input type="search" name="query" placeholder="Search">
+                    <input type="submit" id="search-submit" value="">
+                </form>
+            </li>
+        </ul>
+    </nav>
+    {% block content %}
+    {% endblock %}
+    <footer>{{ wiki.footer }}</footer>
+</body>
+
+</html>

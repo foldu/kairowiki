@@ -1,3 +1,4 @@
+use crate::data::Wiki;
 use askama::Template;
 
 #[derive(Template)]
@@ -5,15 +6,34 @@ use askama::Template;
 pub struct WikiPage<'a> {
     pub title: &'a str,
     pub content: &'a str,
+    pub wiki: Wiki<'a>,
 }
 
 #[derive(Template)]
 #[template(path = "login.html")]
-pub struct Login {}
+pub struct Login<'a> {
+    pub wiki: Wiki<'a>,
+}
 
 #[derive(Template)]
 #[template(path = "register.html")]
-pub struct Register {}
+pub struct Register<'a> {
+    pub wiki: Wiki<'a>,
+    pub error: Option<&'a str>,
+}
+
+impl<'a> Register<'a> {
+    pub fn new(wiki: Wiki<'a>) -> Self {
+        Self { wiki, error: None }
+    }
+
+    pub fn error(wiki: Wiki<'a>, error: &'a str) -> Self {
+        Self {
+            wiki,
+            error: Some(error),
+        }
+    }
+}
 
 #[derive(Template)]
 #[template(path = "register_refresh.html")]

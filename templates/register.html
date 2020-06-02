@@ -1,16 +1,29 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <title>aaaaa</title>
-</head>
+{% extends "generic.html" %}
 
-<body>
-    <form action="/register" method="POST">
-        <input type="text" id="name" name="name">
-        <input type="text" id="email" name="email">
-        <input type="password" id="password" name="password">
-        <input type="submit" value="Register">
-    </form>
-</body>
-</html>
+{% block content %}
+<form action="/register" method="POST" class="flex-centered">
+    <ul class="vertical-form-list">
+        <li>
+            <label for="name">Name</label>
+            <input type="text" id="name" name="name" required>
+        </li>
+        <li>
+            <label for="email">Email</label>
+            <input type="text" id="email" name="email" required>
+        </li>
+        <li>
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" required>
+        </li>
+        <li>
+            <label for="password-check">Repeat Password</label>
+            <input type="password-check" id="password-check" required>
+        </li>
+        <li>
+            <input id="submit" type="submit" value="Register">
+        </li>
+</form>
+<script>
+    // TODO: check password repeat
+</script>
+{% endblock %}

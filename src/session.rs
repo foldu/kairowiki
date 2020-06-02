@@ -42,7 +42,7 @@ impl Sessions {
 
         let now = time::OffsetDateTime::now_utc();
 
-        let expiry = storage.sessions.insert(
+        storage.sessions.insert(
             ret,
             SessionData {
                 user_id,
@@ -73,7 +73,7 @@ impl Sessions {
         match user_id {
             Some(Id::Live(id)) => Some(id),
             Some(Id::Expired) => {
-                self.remove_session(session_id);
+                self.remove_session(session_id).await;
                 None
             }
             _ => None,
@@ -142,13 +142,48 @@ impl SessionData {
 pub enum Error {
     #[error("Received invalid cookie")]
     CorruptedCookie,
+
+    #[error("Session required")]
+    SessionRequired { access_url: String },
 }
 
-//pub fn session_required(
-//) -> impl warp::Filter<Extract = (uuid::Uuid,), Error = warp::Rejection> + Copy {
-//    warp::filters::cookie::cookie("warp-session").map(|cont| {
-//        let uuid = uuid::Uuid::parse_str(cont)
-//            .map_err(|_| warp::reject::custom(Error::CorruptedCookie))?;
-//        Ok(uuid)
-//    })
-//}
+impl warp::reject::Reject for Error {}
+
+pub const COOKIE_NAME: &str = "warp-session";
+
+pub fn login_required(
+    sessions: crate::session::Sessions,
+) -> impl warp::Filter<Extract = (crate::user_storage::UserId,), Error = warp::Rejection> + Clone {
+    use warp::Filter;
+    warp::path::full()
+        .and(warp::filters::cookie::optional(COOKIE_NAME))
+        .and_then(
+            move |path: warp::path::FullPath, cookie_cont: Option<String>| {
+                let sessions = sessions.clone();
+                async move {
+                    // TODO: extract this into a function
+                    let cookie_cont = cookie_cont
+                        .ok_or_else(|| Error::SessionRequired {
+                            access_url: path.as_str().to_owned(),
+                        })
+                        .map_err(warp::reject::custom)?;
+                    let session_id = Uuid::parse_str(&cookie_cont)
+                        .map_err(|_| warp::reject::custom(Error::CorruptedCookie))?;
+                    let user_id = sessions.get_user_id(session_id).await;
+
+                    user_id
+                        .ok_or_else(|| Error::SessionRequired {
+                            access_url: path.as_str().to_owned(),
+                        })
+                        .map_err(warp::reject::custom)
+                }
+            },
+        )
+}
+
+pub fn clear_browser_cookie() -> String {
+    cookie::CookieBuilder::new(crate::session::COOKIE_NAME, "")
+        .expires(OffsetDateTime::from_unix_timestamp(0))
+        .finish()
+        .to_string()
+}

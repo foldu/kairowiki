@@ -1,5 +1,4 @@
 use git2::Repository;
-use sqlx::SqlitePool;
 use std::{
     path::{Path, PathBuf},
     sync::Arc,
@@ -23,10 +22,18 @@ impl Data {
         Ok(Self(Arc::new(DataInner {
             user_storage: Box::new(storage),
             repo: Mutex::new(repo),
-            repo_path: PathBuf::from(cfg.git_repo),
-            port: cfg.port,
-            static_dir: cfg.static_dir,
+            config: cfg,
         })))
+    }
+}
+
+impl Data {
+    pub fn wiki(&self) -> Wiki {
+        Wiki {
+            name: &self.config.wiki_name,
+            footer: &self.config.footer,
+            logo: "/static/dancing_green_fluorescent_alien.gif",
+        }
     }
 }
 
@@ -46,27 +53,40 @@ fn mkdir_p(path: impl AsRef<Path>) -> Result<(), anyhow::Error> {
 pub struct DataInner {
     pub repo: Mutex<git2::Repository>,
     pub user_storage: Box<dyn crate::user_storage::UserStorage>,
-    pub repo_path: PathBuf,
-    pub port: u16,
-    pub static_dir: PathBuf,
+    pub config: Config,
+}
+
+pub struct Wiki<'a> {
+    pub name: &'a str,
+    pub footer: &'a str,
+    pub logo: &'a str,
 }
 
 #[derive(serde::Deserialize)]
-struct Config {
+pub struct Config {
     #[serde(default = "default_repo")]
-    git_repo: PathBuf,
+    pub git_repo: PathBuf,
 
     #[serde(default = "default_db_file")]
-    db_file: String,
+    pub db_file: String,
 
     #[serde(default = "default_db_pool_size")]
-    db_pool_size: u32,
+    pub db_pool_size: u32,
 
     #[serde(default = "default_port")]
-    port: u16,
+    pub port: u16,
 
     #[serde(default = "default_static_dir")]
-    static_dir: PathBuf,
+    pub static_dir: PathBuf,
+
+    #[serde(default = "default_wiki_name")]
+    pub wiki_name: String,
+
+    #[serde(default = "default_footer")]
+    pub footer: String,
+
+    #[serde(default = "default_home_wiki_page")]
+    pub home_wiki_page: String,
 }
 
 fn default_repo() -> PathBuf {
@@ -87,4 +107,16 @@ fn default_port() -> u16 {
 
 fn default_static_dir() -> PathBuf {
     PathBuf::from("/data/static")
+}
+
+fn default_wiki_name() -> String {
+    "kairowiki".to_owned()
+}
+
+fn default_footer() -> String {
+    "kairowiki".into()
+}
+
+fn default_home_wiki_page() -> String {
+    "kairowiki".to_string()
 }
