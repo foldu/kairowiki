@@ -13,6 +13,6 @@ pkgs.mkShell rec {
   #DATABASE_URL = "sqlite://${DB_FILE}";
 
   shellHook = ''
-    source .env
+    source .environment
   '';
 }
