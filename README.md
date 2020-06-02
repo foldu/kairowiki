@@ -1,5 +1,5 @@
 # kairowiki
 ```shell
-source .env
-cargo c
+source .environment
+cargo r
 ```
