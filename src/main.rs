@@ -12,30 +12,6 @@ mod user_storage;
 use tokio::runtime;
 use warp::{http::Uri, Filter};
 
-macro_rules! routes {
-    ($x:expr, $($y:expr),*) => { {
-            let filter = boxed_on_debug!($x);
-            $(
-                let filter = boxed_on_debug!(filter.or($y));
-            )*
-            filter
-    } }
-}
-
-#[cfg(debug_assertions)]
-macro_rules! boxed_on_debug {
-    ($x:expr) => {
-        $x.boxed()
-    };
-}
-
-#[cfg(not(debug_assertions))]
-macro_rules! boxed_on_debug {
-    ($x:expr) => {
-        $x
-    };
-}
-
 async fn run() -> Result<(), anyhow::Error> {
     let _subscriber = tracing_subscriber::fmt()
         .with_max_level(tracing::Level::TRACE)
