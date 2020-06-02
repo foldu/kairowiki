@@ -1,0 +1,51 @@
+{% extends "generic.html" %}
+
+{% block head %}
+<style>
+#edit {
+    height: 100%;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="title" class="hidden">{{ title }}</div>
+<div id="markdown" class="hidden">{{ markdown }}</div>
+<main id="edit">
+    <div id="editor"></div>
+    <button id="save-button" type="submit">Save</button>
+</main>
+{% endblock %}
+
+{% block end %}
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.19.2/min/vs/loader.js"></script>
+<script>
+    require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.19.2/min/vs' }});
+
+    window.MonacoEnvironment = {
+      getWorkerUrl: function(workerId, label) {
+        return `data:text/javascript;charset=utf-8,${encodeURIComponent(`
+          self.MonacoEnvironment = {
+            baseUrl: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.19.2/min/'
+          };
+          importScripts('https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.19.2/min/vs/base/worker/workerMain.js');`
+        )}`;
+      }
+    };
+
+    require(["vs/editor/editor.main"], function () {
+      window.editor = monaco.editor.create(document.querySelector("#editor"), {
+          value: document.querySelector("#markdown").innerHTML,
+          language: "markdown"
+      });
+    });
+
+    document.querySelector("#save-button").addEventListener("click", () => {
+        const title = document.querySelector("#title").innerHTML;
+        console.log(window.editor.getValue());
+        //fetch("/edit/" + title, {
+        //    method: "POST"
+        //});
+    });
+</script>
+{% endblock %}

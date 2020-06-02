@@ -34,7 +34,15 @@ pub async fn edit(
     article: WikiArticle,
     user_id: crate::user_storage::UserId,
 ) -> Result<impl Reply, Rejection> {
-    super::unimplemented()
+    let markdown = tokio::fs::read_to_string(article.path.as_ref())
+        .await
+        .unwrap_or_else(|_| String::new());
+
+    Ok(render!(templates::WikiEdit {
+        title: &article.title,
+        wiki: data.wiki(),
+        markdown: &markdown,
+    }))
 }
 
 pub async fn history(data: Data, article: WikiArticle) -> Result<impl Reply, Rejection> {

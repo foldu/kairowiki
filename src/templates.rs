@@ -1,5 +1,13 @@
-use crate::data::Wiki;
+use crate::{article::ArticleTitle, data::Wiki};
 use askama::Template;
+
+#[derive(Template)]
+#[template(path = "edit.html")]
+pub struct WikiEdit<'a> {
+    pub title: &'a ArticleTitle,
+    pub wiki: Wiki<'a>,
+    pub markdown: &'a str,
+}
 
 #[derive(Template)]
 #[template(path = "wiki_page.html")]

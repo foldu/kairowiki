@@ -24,9 +24,11 @@
             </li>
         </ul>
     </nav>
-    {% block content %}
-    {% endblock %}
+    {% block content %} {% endblock %}
+
     <footer>{{ wiki.footer }}</footer>
+
+    {% block end %} {% endblock %}
 </body>
 
 </html>

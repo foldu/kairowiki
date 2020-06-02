@@ -47,6 +47,10 @@ nav > ul {
     align-items: center;
 }
 
+.hidden {
+    display: none;
+}
+
 footer {
     position: absolute;
     bottom: 0;
@@ -54,6 +58,12 @@ footer {
     text-align: right;
 }
 
-body {
-    height: 100%;
+#edit {
+    display: flex;
+    flex-direction: column;
+}
+
+#editor {
+    /* FIXME: I have no idea how css works */
+    height: 600px;
 }
