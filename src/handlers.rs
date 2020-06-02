@@ -1,7 +1,9 @@
+pub mod search;
 pub mod wiki;
 
 use crate::{data::Data, error::Error, forms, session::Sessions, templates, user_storage};
 use askama::Template;
+use tokio::stream::StreamExt;
 use warp::{http::StatusCode, reject, Rejection, Reply};
 
 pub async fn register_form(data: Data) -> Result<impl Reply, Rejection> {
@@ -67,15 +69,6 @@ pub fn unimplemented() -> Result<impl warp::Reply, Rejection> {
         "Currently not implemented",
         warp::http::StatusCode::BAD_REQUEST,
     ))
-}
-
-#[derive(serde::Deserialize)]
-pub struct SearchQuery {
-    query: String,
-}
-
-pub async fn search(_query: SearchQuery) -> Result<impl warp::Reply, Rejection> {
-    unimplemented()
 }
 
 pub async fn handle_rejection(

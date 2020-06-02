@@ -13,11 +13,11 @@ fn render_markdown(src: &str) -> String {
 
 pub async fn show_entry(data: Data, article: WikiArticle) -> Result<impl Reply, Rejection> {
     // TODO: add rendering cache
-    let body = match tokio::fs::read_to_string(&article.path).await {
+    let body = match tokio::fs::read_to_string(article.path.as_ref()).await {
         Ok(cont) => render_markdown(&cont),
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => format!(
             "Article with title {} not found, click on edit to create it",
-            article.title
+            article.title.as_ref()
         ),
         Err(e) => return Err(reject::custom(Error::Io(e))),
     };

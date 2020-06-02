@@ -53,33 +53,37 @@ async fn run() -> Result<(), anyhow::Error> {
     let sessions = warp::any().map(move || sessions.clone());
 
     let root = warp::get().and(warp::path::end());
-    let search = root.and(warp::query()).and_then(handlers::search);
+
+    let search = warp::path("search")
+        .and(warp::path::end())
+        .and(data_filter.clone())
+        .and(warp::query())
+        .and_then(handlers::search::search_repo);
+
     let home_url =
         warp::http::Uri::from_maybe_shared(format!("/wiki/{}", data.config.home_wiki_page.clone()))
             .unwrap();
     let home = root.map(move || warp::redirect(home_url.clone()));
 
     let wiki = warp::get().and(warp::path("wiki"));
-    let wiki_article = wiki
-        .and(data_filter.clone())
-        .and(crate::filters::wiki_article(data.clone()));
     let wiki_home = wiki
         .and(warp::path::end())
         .map(|| warp::redirect(Uri::from_static("/")));
-    let wiki_entries = wiki_article
+    let wiki_route = data_filter
         .clone()
-        .and(warp::path::end())
+        .and(crate::filters::wiki_article(data.clone()));
+
+    let wiki_entries = wiki
+        .and(wiki_route.clone())
         .and_then(handlers::wiki::show_entry);
-    let wiki_edit = wiki_article
-        .clone()
-        .and(warp::path("edit"))
-        .and(warp::path::end())
+
+    let edit = warp::path("edit")
+        .and(wiki_route.clone())
         .and(login_required)
         .and_then(handlers::wiki::edit);
-    let wiki_history = wiki_article
-        .clone()
-        .and(warp::path("history"))
-        .and(warp::path::end())
+
+    let history = warp::path("history")
+        .and(wiki_route)
         .and_then(handlers::wiki::history);
 
     let register_path = warp::path("register").and(warp::path::end());
@@ -118,8 +122,8 @@ async fn run() -> Result<(), anyhow::Error> {
         login_post,
         search,
         static_,
-        wiki_edit,
-        wiki_history
+        edit,
+        history
     };
     let routes = routes.recover(handlers::handle_rejection);
 

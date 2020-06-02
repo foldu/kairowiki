@@ -36,6 +36,14 @@ impl<'a> Register<'a> {
 }
 
 #[derive(Template)]
+#[template(path = "search_results.html")]
+pub struct SearchResults<'a> {
+    pub wiki: Wiki<'a>,
+    pub query: &'a str,
+    pub results: &'a [crate::filters::ArticleTitle],
+}
+
+#[derive(Template)]
 #[template(path = "register_refresh.html")]
 pub struct RegisterRefresh {}
 
