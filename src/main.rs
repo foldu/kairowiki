@@ -79,7 +79,7 @@ async fn run() -> Result<(), anyhow::Error> {
 
     let edit = warp::path("edit")
         .and(wiki_route.clone())
-        .and(login_required)
+        .and(login_required.clone())
         .and_then(handlers::wiki::edit);
 
     let history = warp::path("history")
@@ -111,6 +111,12 @@ async fn run() -> Result<(), anyhow::Error> {
         .and(warp::filters::body::form())
         .and(warp::query())
         .and_then(handlers::auth::login);
+    let logout = warp::path("logout")
+        .and(warp::path::end())
+        .and(warp::post())
+        .and(login_required)
+        .and(sessions)
+        .and_then(handlers::auth::logout);
 
     let routes = routes! {
         home,
@@ -123,7 +129,8 @@ async fn run() -> Result<(), anyhow::Error> {
         search,
         static_,
         edit,
-        history
+        history,
+        logout
     };
     let routes = routes.recover(handlers::handle_rejection);
 

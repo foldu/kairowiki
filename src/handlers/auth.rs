@@ -1,4 +1,10 @@
-use crate::{data::Data, forms, session::Sessions, templates, user_storage};
+use crate::{
+    data::Data,
+    forms,
+    session::Sessions,
+    templates,
+    user_storage::{self, UserId},
+};
 use warp::{http::StatusCode, reject, Rejection, Reply};
 
 pub async fn register_form(data: Data) -> Result<impl Reply, Rejection> {
@@ -59,3 +65,15 @@ pub async fn login(
         .unwrap())
 }
 
+pub async fn logout(
+    user_id: UserId,
+    sessions: Sessions,
+) -> Result<impl warp::Reply, std::convert::Infallible> {
+    sessions.logout(user_id).await;
+    Ok(warp::http::Response::builder()
+        .status(StatusCode::PERMANENT_REDIRECT)
+        .header("Set-Cookie", &crate::session::clear_browser_cookie())
+        .header("Location", "/")
+        .body("".to_string())
+        .unwrap())
+}

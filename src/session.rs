@@ -80,8 +80,13 @@ impl Sessions {
         }
     }
 
-    pub async fn remove_session(&self, session_id: Uuid) {
+    async fn remove_session(&self, session_id: Uuid) {
         self.0.write().await.remove_session(session_id);
+    }
+
+    pub async fn logout(&self, user_id: UserId) {
+        let mut storage = self.0.write().await;
+        storage.remove_user(user_id);
     }
 }
 
