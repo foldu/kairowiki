@@ -2,6 +2,7 @@
 , naersk
 , sqlite
 , pkg-config
+, debug
 }:
 
 let
@@ -17,6 +18,8 @@ naersk.buildPackage {
     sqlite3 data/db/db.sqlite -init ./schema.sql .exit
   '';
   DATABASE_URL = "sqlite://data/db/db.sqlite";
+  release = !debug;
+  doCheck = debug;
   buildInputs = [
     openssl
     sqlite

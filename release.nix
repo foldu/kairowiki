@@ -1,3 +1,4 @@
+{ debug ? false }:
 let
   sources = import ./nix/sources.nix;
   pkgs = import sources.nixpkgs {};
@@ -5,4 +6,7 @@ let
     inherit sources;
   };
 in
-pkgs.callPackage ./default.nix { inherit (rust) naersk; }
+pkgs.callPackage ./default.nix {
+  inherit (rust) naersk;
+  debug = debug;
+}

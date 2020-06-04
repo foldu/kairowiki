@@ -1,0 +1,12 @@
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    name: Test build
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: cachix/install-nix-action@v10
+      - run: nix-build -E '(import ./release.nix { debug = true; })'
