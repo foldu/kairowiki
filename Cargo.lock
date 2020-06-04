@@ -1526,6 +1526,7 @@ version = "1.0.53"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "993948e75b189211a9b31a7528f950c6adc21f9720b6438ff80a7fa2f864cea2"
 dependencies = [
+ "indexmap",
  "itoa",
  "ryu",
  "serde",
@@ -1560,6 +1561,18 @@ name = "sha1"
 version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2579985fda508104f7587689507983eadd6a6e84dd35d6d115361f530916fa0d"
+
+[[package]]
+name = "sha2"
+version = "0.8.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a256f46ea78a0c0d9ff00077504903ac881a1dafdc20da66545699e7776b3e69"
+dependencies = [
+ "block-buffer",
+ "digest",
+ "fake-simd",
+ "opaque-debug",
+]
 
 [[package]]
 name = "sharded-slab"
@@ -1623,8 +1636,7 @@ dependencies = [
 [[package]]
 name = "sqlx"
 version = "0.3.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8974cacd80085fbe49e778708d660dec6fb351604dc34c3905b26efb2803b038"
+source = "git+https://github.com/launchbadge/sqlx?rev=086dfec00288594359a07fb87f6b9536959542a2#086dfec00288594359a07fb87f6b9536959542a2"
 dependencies = [
  "sqlx-core",
  "sqlx-macros",
@@ -1633,8 +1645,7 @@ dependencies = [
 [[package]]
 name = "sqlx-core"
 version = "0.3.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "88ac5a436f941c42eac509471a730df5c3c58e1450e68cd39afedbd948206273"
+source = "git+https://github.com/launchbadge/sqlx?rev=086dfec00288594359a07fb87f6b9536959542a2#086dfec00288594359a07fb87f6b9536959542a2"
 dependencies = [
  "async-native-tls",
  "async-stream",
@@ -1651,6 +1662,7 @@ dependencies = [
  "log 0.4.8",
  "memchr",
  "percent-encoding",
+ "serde",
  "sqlformat",
  "tokio",
  "url",
@@ -1659,15 +1671,18 @@ dependencies = [
 [[package]]
 name = "sqlx-macros"
 version = "0.3.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "de2ae78b783af5922d811b14665a5a3755e531c3087bb805cf24cf71f15e6780"
+source = "git+https://github.com/launchbadge/sqlx?rev=086dfec00288594359a07fb87f6b9536959542a2#086dfec00288594359a07fb87f6b9536959542a2"
 dependencies = [
  "dotenv",
  "futures",
  "heck",
- "lazy_static",
+ "hex",
+ "once_cell",
  "proc-macro2",
  "quote",
+ "serde",
+ "serde_json",
+ "sha2",
  "sqlx-core",
  "syn",
  "tokio",

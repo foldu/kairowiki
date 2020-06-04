@@ -15,7 +15,7 @@ envy = "0.4.1"
 serde = { version = "1.0.110", features = ["derive"] }
 tracing = "0.1.14"
 tracing-futures = "0.2.4"
-sqlx = { version = "0.3.5", default-features = false, features = ["sqlite", "runtime-tokio", "macros"] }
+sqlx = { rev = "086dfec00288594359a07fb87f6b9536959542a2", git = "https://github.com/launchbadge/sqlx", default-features = false, features = ["sqlite", "runtime-tokio", "macros", "offline"] }
 derive_more = "0.99.7"
 rust-argon2 = "0.8.2"
 anyhow = "1.0.31"

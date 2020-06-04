@@ -1,0 +1,34 @@
+{
+  "db": "SQLite",
+  "5b68897ee4a2b2249be5a641e082cf52429a3a99f1a1c8d57396e1e4af9abd1c": {
+    "query": "INSERT INTO wiki_user(name, email, pass_hash) VALUES (?, ?, ?)",
+    "describe": {
+      "params": [
+        null,
+        null,
+        null
+      ],
+      "columns": []
+    }
+  },
+  "c7360d2506f46daa5c6d26017f545336974921c42a4bdeeff07dc2a1f54fabae": {
+    "query": "SELECT id, pass_hash FROM wiki_user WHERE name = ?",
+    "describe": {
+      "params": [
+        null
+      ],
+      "columns": [
+        {
+          "name": "id",
+          "type_info": "Int",
+          "not_null": true
+        },
+        {
+          "name": "pass_hash",
+          "type_info": "Blob",
+          "not_null": true
+        }
+      ]
+    }
+  }
+}

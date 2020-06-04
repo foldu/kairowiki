@@ -1,8 +1,8 @@
 export DB_FILE=./data/db/db.sqlite
 export GIT_REPO=./data/repo
 export STATIC_DIR=./static
-export DATABASE_URL=sqlite://${DB_FILE}
-mkdir -p "$(dirname "${DB_FILE}")"
-if ! test -f "${DB_FILE}"; then
-  sqlite3 "${DB_FILE}" -init ./schema.sql .exit
-fi
+#export DATABASE_URL=sqlite://${DB_FILE}
+#mkdir -p "$(dirname "${DB_FILE}")"
+#if ! test -f "${DB_FILE}"; then
+#  sqlite3 "${DB_FILE}" -init ./schema.sql .exit
+#fi
