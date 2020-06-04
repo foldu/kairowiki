@@ -9,6 +9,15 @@ pub enum ConnectionError {
         source: std::io::Error,
     },
 
+    #[snafu(display("Could not stat {}: {}", path, source))]
+    Stat {
+        path: String,
+        source: std::io::Error,
+    },
+
+    #[snafu(display("Could not create schema: {}", source))]
+    CreateSchema { source: sqlx::Error },
+
     #[snafu(display("Can't open sqlite database {}: {}", path, source))]
     Connect { path: String, source: sqlx::Error },
 }
@@ -39,6 +48,16 @@ impl SqliteStorage {
                 })?;
         }
 
+        // FIXME: do proper migrations
+        let create_schema = match tokio::fs::metadata(&path).await {
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => true,
+            other => other
+                .with_context(|| Stat {
+                    path: path.to_owned(),
+                })
+                .map(|_| false)?,
+        };
+
         let url = format!("sqlite://{}", path);
         let pool = sqlx::SqlitePool::builder()
             .max_size(max_connections)
@@ -47,6 +66,15 @@ impl SqliteStorage {
             .with_context(|| Connect {
                 path: path.to_owned(),
             })?;
+
+        let mut cxn = pool.acquire().await.unwrap();
+
+        if create_schema {
+            sqlx::query(include_str!("../../schema.sql"))
+                .execute(&mut cxn)
+                .await
+                .context(CreateSchema)?;
+        }
 
         Ok(Self(pool))
     }

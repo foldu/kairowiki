@@ -1,10 +1,12 @@
 - [x] copy over static dir in build
 - [x] git init repo if not exists
-- [ ] actually apply schema to sqlite db
+- [x] actually apply schema to sqlite db
 - [ ] write readme
-- [ ] link to build status and dockerhub
+- [x] badge link to build status and dockerhub
 - [ ] fix css
 - [ ] make editing articles work
 - [ ] LDAP user storage
 - [ ] make logo
 - [x] graceful shutdown
+- [ ] do proper migrations
+- [ ] loglevel environment variable
