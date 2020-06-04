@@ -7,4 +7,4 @@
 - [ ] make editing articles work
 - [ ] LDAP user storage
 - [ ] make logo
-- [ ] graceful shutdown
+- [x] graceful shutdown

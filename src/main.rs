@@ -9,7 +9,14 @@ mod session;
 mod templates;
 mod user_storage;
 
-use tokio::runtime;
+use futures_util::{
+    future::FutureExt,
+    stream::{self, StreamExt},
+};
+use tokio::{
+    runtime,
+    signal::unix::{signal, SignalKind},
+};
 use warp::{http::Uri, Filter};
 
 async fn run() -> Result<(), anyhow::Error> {
@@ -110,9 +117,18 @@ async fn run() -> Result<(), anyhow::Error> {
     };
     let routes = routes.recover(handlers::handle_rejection);
 
-    warp::serve(routes)
-        .run(([0, 0, 0, 0], data.config.port))
-        .await;
+    let term = signal(SignalKind::terminate()).unwrap();
+    let int = signal(SignalKind::interrupt()).unwrap();
+    let shutdown = async move {
+        stream::select(term, int).next().await;
+    };
+
+    let (addr, server) =
+        warp::serve(routes).bind_with_graceful_shutdown(([0, 0, 0, 0], data.config.port), shutdown);
+
+    tracing::info!("Listening on http://{}", addr);
+
+    server.await;
 
     Ok(())
 }

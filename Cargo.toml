@@ -9,7 +9,7 @@ license = "Unlicense OR MIT"
 
 [dependencies]
 warp = "0.2.3"
-tokio = { version = "0.2.21", features = ["rt-threaded", "sync"] }
+tokio = { version = "0.2.21", features = ["rt-threaded", "sync", "signal"] }
 snafu = "0.6.8"
 git2 = "0.13.6"
 envy = "0.4.1"
@@ -31,3 +31,4 @@ uuid = { version = "0.8.1", features = ["v4"] }
 time = "0.2.16"
 urlencoding = "1.0.0"
 regex = "1.3.9"
+futures-util = "0.3.5"
