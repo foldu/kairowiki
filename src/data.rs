@@ -1,3 +1,4 @@
+use anyhow::Context;
 use git2::Repository;
 use std::{
     path::{Path, PathBuf},
@@ -12,6 +13,12 @@ impl Data {
     pub async fn from_env() -> Result<Self, anyhow::Error> {
         let cfg: Config = envy::from_env()?;
         mkdir_p(&cfg.git_repo)?;
+        match Repository::open(&cfg.git_repo) {
+            Err(e) if e.code() == git2::ErrorCode::NotFound => {
+                Repository::init(&cfg.git_repo).context("Could not init git repo")?;
+            }
+            other => other.map(|_| ()).context("Could not open git repository")?,
+        };
 
         let storage =
             crate::user_storage::SqliteStorage::open(&cfg.db_file, cfg.db_pool_size).await?;
