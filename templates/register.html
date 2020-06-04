@@ -2,6 +2,11 @@
 
 {% block content %}
 <form action="/register" method="POST" class="flex-centered">
+    {% match error %}
+        {% when Some with (error) %}
+            {{ error }}
+        {% when None %}
+    {% endmatch %}
     <ul class="vertical-form-list">
         <li>
             <label for="name">Name</label>
@@ -17,7 +22,7 @@
         </li>
         <li>
             <label for="password-check">Repeat Password</label>
-            <input type="password-check" id="password-check" required>
+            <input type="password" id="password-check" required>
         </li>
         <li>
             <input id="submit" type="submit" value="Register">

@@ -21,9 +21,12 @@ pub async fn register(data: Data, form: forms::Register) -> Result<impl Reply, R
             StatusCode::CONFLICT,
             templates::Register::error(data.wiki(), "Email already registered")
         )),
-        other => other
-            .map_err(reject::custom)
-            .map(|_| render!(StatusCode::CREATED, templates::RegisterRefresh {})),
+        other => other.map_err(reject::custom).map(|_| {
+            render!(
+                StatusCode::CREATED,
+                templates::RegisterRefresh { wiki: data.wiki() }
+            )
+        }),
     }
 }
 

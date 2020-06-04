@@ -53,7 +53,9 @@ pub struct SearchResults<'a> {
 
 #[derive(Template)]
 #[template(path = "register_refresh.html")]
-pub struct RegisterRefresh {}
+pub struct RegisterRefresh<'a> {
+    pub wiki: Wiki<'a>,
+}
 
 #[derive(Template)]
 #[template(path = "error.html")]
