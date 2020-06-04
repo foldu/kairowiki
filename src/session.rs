@@ -17,6 +17,8 @@ impl Sessions {
                 if let Some(this) = weakling.upgrade() {
                     let mut storage = this.write().await;
                     storage.gc();
+                } else {
+                    return;
                 }
             }
         });
