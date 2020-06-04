@@ -1,6 +1,7 @@
 { openssl
 , naersk
 , sqlite
+, pkg-config
 }:
 
 let
@@ -11,8 +12,14 @@ in
 naersk.buildPackage {
   inherit src;
   singleStep = true;
+  preBuild = ''
+    mkdir -p data/db
+    sqlite3 data/db/db.sqlite -init ./schema.sql .exit
+  '';
+  DATABASE_URL = "sqlite://data/db/db.sqlite";
   buildInputs = [
     openssl
     sqlite
+    pkg-config
   ];
 }

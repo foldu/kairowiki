@@ -1,16 +1,17 @@
 let
-  pkgs = import <nixpkgs> {};
+  sources = import ./nix/sources.nix;
+  pkgs = import sources.nixpkgs {};
+  rust = import ./nix/rust.nix {
+    inherit sources;
+  };
 in
 pkgs.mkShell rec {
   buildInputs = with pkgs; [
     openssl
     pkg-config
     sqlite
+    rust.rust
   ];
-
-  #DB_FILE = "./data/db/db.sqlite";
-  #GIT_REPO = "./data/repo";
-  #DATABASE_URL = "sqlite://${DB_FILE}";
 
   shellHook = ''
     source .environment
