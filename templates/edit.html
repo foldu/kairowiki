@@ -42,10 +42,23 @@
 
     document.querySelector("#save-button").addEventListener("click", () => {
         const title = document.querySelector("#title").innerHTML;
-        console.log(window.editor.getValue());
-        //fetch("/edit/" + title, {
-        //    method: "POST"
-        //});
+        fetch("/edit/" + title, {
+            method: "POST",
+            credentials: "same-origin",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                markdown: window.editor.getValue(),
+            })
+        }).then(response => {
+            // TODO: handle diff if somebody else commited before
+            if (response.status === 200) {
+                window.location = "/wiki/" + title;
+            } else {
+                console.error(response);
+            }
+        });
     });
 </script>
 {% endblock %}

@@ -4,6 +4,7 @@ mod article;
 mod data;
 mod error;
 mod forms;
+mod git;
 mod handlers;
 mod session;
 mod templates;
@@ -55,12 +56,20 @@ async fn run() -> Result<(), anyhow::Error> {
         .and(wiki_route.clone())
         .and_then(handlers::wiki::show_entry);
 
-    let edit = warp::path("edit")
+    let edit_route = warp::path("edit")
         .and(wiki_route.clone())
-        .and(login_required.clone())
+        .and(login_required.clone());
+    let edit = edit_route
+        .clone()
+        .and(warp::get())
         .and_then(handlers::wiki::edit);
+    let edit_post = edit_route
+        .and(warp::post())
+        .and(warp::body::json())
+        .and_then(handlers::wiki::edit_post);
 
     let history = warp::path("history")
+        .and(warp::get())
         .and(wiki_route)
         .and_then(handlers::wiki::history);
 
@@ -108,7 +117,8 @@ async fn run() -> Result<(), anyhow::Error> {
         static_,
         edit,
         history,
-        logout
+        logout,
+        edit_post
     };
     let routes = routes.recover(handlers::handle_rejection);
 

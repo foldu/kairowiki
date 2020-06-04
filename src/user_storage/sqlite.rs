@@ -128,6 +128,18 @@ impl super::UserStorage for SqliteStorage {
 
         Ok(())
     }
+
+    async fn fetch_account(&self, id: super::UserId) -> Result<super::UserAccount, super::Error> {
+        let mut cxn = self.0.acquire().await?;
+        sqlx::query!("SELECT name, email FROM wiki_user WHERE id = ?", id.0)
+            .fetch_optional(&mut cxn)
+            .await?
+            .map(|row| super::UserAccount {
+                name: row.name,
+                email: row.email,
+            })
+            .ok_or(super::Error::UserDoesNotExist)
+    }
 }
 
 #[derive(derive_more::AsRef)]

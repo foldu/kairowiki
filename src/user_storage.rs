@@ -12,10 +12,17 @@ pub trait UserStorage: Sync + Send {
     }
 
     async fn check_credentials(&self, name: &str, pass: &str) -> Result<UserId, Error>;
+
+    async fn fetch_account(&self, id: UserId) -> Result<UserAccount, Error>;
 }
 
 #[derive(Debug, Clone, Copy, PartialOrd, Ord, Eq, PartialEq)]
 pub struct UserId(i32);
+
+pub struct UserAccount {
+    pub name: String,
+    pub email: String,
+}
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {

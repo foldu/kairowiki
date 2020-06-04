@@ -4,7 +4,6 @@ use std::{
     path::{Path, PathBuf},
     sync::Arc,
 };
-use tokio::sync::Mutex;
 
 #[derive(derive_more::Deref, Clone)]
 pub struct Data(Arc<DataInner>);
@@ -23,12 +22,8 @@ impl Data {
         let storage =
             crate::user_storage::SqliteStorage::open(&cfg.db_file, cfg.db_pool_size).await?;
 
-        let _ = std::fs::create_dir_all(&cfg.git_repo);
-        let repo = Repository::discover(&cfg.git_repo)?;
-
         Ok(Self(Arc::new(DataInner {
             user_storage: Box::new(storage),
-            repo: Mutex::new(repo),
             config: cfg,
         })))
     }
@@ -62,7 +57,6 @@ fn mkdir_p(path: impl AsRef<Path>) -> Result<(), anyhow::Error> {
 }
 
 pub struct DataInner {
-    pub repo: Mutex<git2::Repository>,
     pub user_storage: Box<dyn crate::user_storage::UserStorage>,
     pub config: Config,
 }

@@ -1,4 +1,6 @@
-use crate::{article::WikiArticle, data::Data, error::Error, templates};
+use crate::{
+    article::WikiArticle, data::Data, error::Error, forms, templates, user_storage::UserId,
+};
 use warp::{
     reject::{self, Rejection},
     Reply,
@@ -32,7 +34,7 @@ pub async fn show_entry(data: Data, article: WikiArticle) -> Result<impl Reply, 
 pub async fn edit(
     data: Data,
     article: WikiArticle,
-    user_id: crate::user_storage::UserId,
+    user_id: UserId,
 ) -> Result<impl Reply, Rejection> {
     let markdown = tokio::fs::read_to_string(article.path.as_ref())
         .await
@@ -43,6 +45,26 @@ pub async fn edit(
         wiki: data.wiki(),
         markdown: &markdown,
     }))
+}
+
+pub async fn edit_post(
+    data: Data,
+    article: WikiArticle,
+    user_id: UserId,
+    new_article: forms::NewArticle,
+) -> Result<impl Reply, Rejection> {
+    let account = data
+        .user_storage
+        .fetch_account(user_id)
+        .await
+        .map_err(warp::reject::custom)?;
+
+    tokio::task::block_in_place(move || {
+        crate::git::commit_article(&data, &article, &account, &new_article)
+    })
+    .map_err(warp::reject::custom)?;
+
+    Ok("")
 }
 
 pub async fn history(data: Data, article: WikiArticle) -> Result<impl Reply, Rejection> {
