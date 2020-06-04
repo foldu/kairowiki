@@ -1,4 +1,4 @@
-- [ ] copy over static dir in build
+- [x] copy over static dir in build
 - [x] git init repo if not exists
 - [ ] actually apply schema to sqlite db
 - [ ] write readme
@@ -6,3 +6,5 @@
 - [ ] fix css
 - [ ] make editing articles work
 - [ ] LDAP user storage
+- [ ] make logo
+- [ ] graceful shutdown

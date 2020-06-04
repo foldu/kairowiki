@@ -113,7 +113,7 @@ fn default_port() -> u16 {
 }
 
 fn default_static_dir() -> PathBuf {
-    PathBuf::from("/data/static")
+    PathBuf::from("/static")
 }
 
 fn default_wiki_name() -> String {

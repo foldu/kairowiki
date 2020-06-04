@@ -25,4 +25,9 @@ naersk.buildPackage {
     sqlite
     pkg-config
   ];
+  postInstall = ''
+    # FIXME: should copy into more UNIXy path like /usr/lib/kairowiki
+    mkdir -p "$out/static"
+    cp -r ${src}/static "$out"
+  '';
 }
