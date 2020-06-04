@@ -3,7 +3,13 @@ pub use sqlite::SqliteStorage;
 
 #[async_trait::async_trait]
 pub trait UserStorage: Sync + Send {
-    async fn register(&self, info: &crate::forms::Register) -> Result<(), Error>;
+    fn registration_supported(&self) -> bool {
+        false
+    }
+
+    async fn register(&self, _info: &crate::forms::Register) -> Result<(), Error> {
+        Err(Error::RegistrationUnsupported)
+    }
 
     async fn check_credentials(&self, name: &str, pass: &str) -> Result<UserId, Error>;
 }
@@ -24,6 +30,9 @@ pub enum Error {
 
     #[error("Email is already registered")]
     EmailExists,
+
+    #[error("Backend does not support registration")]
+    RegistrationUnsupported,
 
     #[error("{0}")]
     Generic(Box<dyn std::error::Error + Send + Sync>),

@@ -21,6 +21,7 @@ pub struct WikiPage<'a> {
 #[template(path = "login.html")]
 pub struct Login<'a> {
     pub wiki: Wiki<'a>,
+    pub registration_enabled: bool,
 }
 
 #[derive(Template)]
@@ -76,6 +77,13 @@ impl<'a> Error<'a> {
         Self {
             code: 404,
             msg: "Not found",
+        }
+    }
+
+    pub fn not_implemented() -> Self {
+        Self {
+            code: 501,
+            msg: "Not implemented",
         }
     }
 }

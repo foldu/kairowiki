@@ -8,10 +8,26 @@ use crate::{
 use warp::{http::StatusCode, reject, Rejection, Reply};
 
 pub async fn register_form(data: Data) -> Result<impl Reply, Rejection> {
-    Ok(render!(templates::Register::new(data.wiki())))
+    // TODO: better error message about registration being disabled/not supported
+    Ok(if data.registration_possible() {
+        render!(templates::Register::new(data.wiki()))
+    } else {
+        render!(
+            warp::http::StatusCode::NOT_IMPLEMENTED,
+            templates::Error::not_implemented()
+        )
+    })
 }
 
 pub async fn register(data: Data, form: forms::Register) -> Result<impl Reply, Rejection> {
+    if !data.registration_possible() {
+        // TODO: same as in register_form
+        return Ok(render!(
+            warp::http::StatusCode::NOT_IMPLEMENTED,
+            templates::Error::not_implemented()
+        ));
+    }
+
     match data.user_storage.register(&form).await {
         Err(user_storage::Error::UserExists) => Ok(render!(
             StatusCode::CONFLICT,
@@ -31,7 +47,10 @@ pub async fn register(data: Data, form: forms::Register) -> Result<impl Reply, R
 }
 
 pub async fn login_form(data: Data) -> Result<impl warp::Reply, Rejection> {
-    Ok(render!(templates::Login { wiki: data.wiki() }))
+    Ok(render!(templates::Login {
+        wiki: data.wiki(),
+        registration_enabled: data.registration_possible()
+    }))
 }
 
 #[derive(serde::Deserialize)]

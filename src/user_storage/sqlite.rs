@@ -82,6 +82,10 @@ impl SqliteStorage {
 
 #[async_trait::async_trait]
 impl super::UserStorage for SqliteStorage {
+    fn registration_supported(&self) -> bool {
+        true
+    }
+
     async fn check_credentials(
         &self,
         name: &str,

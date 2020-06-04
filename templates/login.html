@@ -17,6 +17,8 @@
                 <input type="submit" value="Login">
             </li>
     </form>
-    <a href="/register">Register</a>
+    {% if registration_enabled %}
+        <a href="/register">Register</a>
+    {% endif %}
 </main>
 {% endblock %}

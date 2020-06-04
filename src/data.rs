@@ -42,6 +42,10 @@ impl Data {
             logo: "/static/dancing_green_fluorescent_alien.gif",
         }
     }
+
+    pub fn registration_possible(&self) -> bool {
+        self.user_storage.registration_supported() && self.config.registration_enabled
+    }
 }
 
 fn mkdir_p(path: impl AsRef<Path>) -> Result<(), anyhow::Error> {
@@ -94,6 +98,13 @@ pub struct Config {
 
     #[serde(default = "default_home_wiki_page")]
     pub home_wiki_page: String,
+
+    #[serde(default = "tru")]
+    pub registration_enabled: bool,
+}
+
+fn tru() -> bool {
+    true
 }
 
 fn default_repo() -> PathBuf {
