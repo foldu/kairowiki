@@ -1,7 +1,8 @@
-- copy over static dir in build [ ]
-- git init repo if not exists [ ]
-- actually apply schema to sqlite db [ ]
-- write readme [ ]
-- link to build status and dockerhub [ ]
-- fix css [ ]
-- make editing articles work [ ]
+- [ ] copy over static dir in build
+- [ ] git init repo if not exists
+- [ ] actually apply schema to sqlite db
+- [ ] write readme
+- [ ] link to build status and dockerhub
+- [ ] fix css
+- [ ] make editing articles work
+- [ ] LDAP user storage
