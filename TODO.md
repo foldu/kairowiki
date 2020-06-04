@@ -9,4 +9,4 @@
 - [ ] make logo
 - [x] graceful shutdown
 - [ ] do proper migrations
-- [ ] loglevel environment variable
+- [x] loglevel environment variable

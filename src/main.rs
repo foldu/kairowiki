@@ -9,10 +9,7 @@ mod session;
 mod templates;
 mod user_storage;
 
-use futures_util::{
-    future::FutureExt,
-    stream::{self, StreamExt},
-};
+use futures_util::stream::{self, StreamExt};
 use tokio::{
     runtime,
     signal::unix::{signal, SignalKind},
@@ -20,9 +17,7 @@ use tokio::{
 use warp::{http::Uri, Filter};
 
 async fn run() -> Result<(), anyhow::Error> {
-    let _subscriber = tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::TRACE)
-        .init();
+    init_logging();
 
     // FIXME: clean this up
     let data = data::Data::from_env().await?;
@@ -131,6 +126,19 @@ async fn run() -> Result<(), anyhow::Error> {
     server.await;
 
     Ok(())
+}
+
+fn init_logging() {
+    // FIXME: hack for default log level=info
+    match std::env::var_os("RUST_LOG") {
+        Some(_) => (),
+        None => {
+            std::env::set_var("RUST_LOG", "info");
+        }
+    };
+    tracing_subscriber::fmt()
+        .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
+        .init()
 }
 
 fn main() {
