@@ -60,7 +60,7 @@ pub async fn edit_post(
         .map_err(warp::reject::custom)?;
 
     tokio::task::block_in_place(move || {
-        crate::git::commit_article(&data, &article, &account, &new_article)
+        crate::git::commit_article(&data.config.git_repo, &article, &account, &new_article)
     })
     .map_err(warp::reject::custom)?;
 

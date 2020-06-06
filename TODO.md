@@ -8,5 +8,5 @@
 - [ ] LDAP user storage
 - [ ] make logo
 - [x] graceful shutdown
-- [ ] do proper migrations
+- [x] do proper migrations
 - [x] loglevel environment variable

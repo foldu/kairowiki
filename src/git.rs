@@ -11,12 +11,12 @@ pub enum Error {
 impl warp::reject::Reject for Error {}
 
 pub fn commit_article(
-    data: &crate::data::Data,
+    git_repo: &std::path::Path,
     article: &crate::article::WikiArticle,
     account: &crate::user_storage::UserAccount,
     new_article: &crate::forms::NewArticle,
 ) -> Result<(), Error> {
-    let repo = git2::Repository::open(&data.config.git_repo)?;
+    let repo = git2::Repository::open(git_repo)?;
     let mut sleep_time = std::time::Duration::from_millis(10);
     // I just hope acquiring the index locks it
     // TODO: lookup if this actually locks it
@@ -36,7 +36,7 @@ pub fn commit_article(
 
     let relative_to_repo = article
         .path
-        .strip_prefix(&data.config.git_repo)
+        .strip_prefix(git_repo)
         .expect("Invalid git repo path");
     index.add_path(&relative_to_repo)?;
     let oid = index.write_tree()?;
