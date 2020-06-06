@@ -3,6 +3,7 @@ use std::{collections::BTreeMap, sync::Arc, time::Duration};
 use time::OffsetDateTime;
 use tokio::{stream::StreamExt, sync::RwLock};
 use uuid::Uuid;
+use warp::http::HeaderValue;
 
 #[derive(Clone)]
 pub struct Sessions(Arc<RwLock<SessionInner>>);
@@ -25,34 +26,43 @@ impl Sessions {
 
         ret
     }
-}
 
-impl Sessions {
-    pub async fn login(&self, user_id: UserId) -> (Uuid, time::Duration) {
-        let ret = Uuid::new_v4();
+    pub async fn login(&self, user_id: UserId) -> LoginSession {
+        let uuid = {
+            let storage = self.0.read().await;
+            loop {
+                let uuid = Uuid::new_v4();
+                if !storage.sessions.contains_key(&uuid) {
+                    break uuid;
+                }
+            }
+        };
         let mut storage = self.0.write().await;
         let stale_session = storage
             .users_logged_in
             .get_mut(&user_id)
-            .map(|stale_session| std::mem::replace(stale_session, ret));
+            .map(|stale_session| std::mem::replace(stale_session, uuid));
 
         if let Some(stale_session) = stale_session {
             storage.sessions.remove(&stale_session);
         } else {
-            storage.users_logged_in.insert(user_id, ret);
+            storage.users_logged_in.insert(user_id, uuid);
         }
 
         let now = time::OffsetDateTime::now_utc();
 
         storage.sessions.insert(
-            ret,
+            uuid,
             SessionData {
                 user_id,
                 expiry: now + time::Duration::seconds(3600),
             },
         );
 
-        (ret, time::Duration::seconds(3600))
+        LoginSession {
+            uuid,
+            expiry_time: time::Duration::seconds(3600),
+        }
     }
 
     pub async fn get_user_id(&self, session_id: Uuid) -> Option<UserId> {
@@ -188,9 +198,31 @@ pub fn login_required(
         )
 }
 
-pub fn clear_browser_cookie() -> String {
-    cookie::CookieBuilder::new(crate::session::COOKIE_NAME, "")
-        .expires(OffsetDateTime::from_unix_timestamp(0))
-        .finish()
-        .to_string()
+pub struct LoginSession {
+    uuid: Uuid,
+    expiry_time: time::Duration,
+}
+
+impl std::convert::TryFrom<LoginSession> for HeaderValue {
+    type Error = std::convert::Infallible;
+    fn try_from(other: LoginSession) -> Result<HeaderValue, Self::Error> {
+        let cookie =
+            cookie::CookieBuilder::new(crate::session::COOKIE_NAME, format!("{}", other.uuid))
+                .max_age(other.expiry_time)
+                .finish();
+        Ok(HeaderValue::try_from(cookie.to_string()).unwrap())
+    }
+}
+
+pub struct ClearCookie;
+
+impl std::convert::TryFrom<ClearCookie> for HeaderValue {
+    type Error = std::convert::Infallible;
+    fn try_from(_: ClearCookie) -> Result<HeaderValue, Self::Error> {
+        let cookie = cookie::CookieBuilder::new(crate::session::COOKIE_NAME, "")
+            .expires(OffsetDateTime::from_unix_timestamp(0))
+            .finish()
+            .to_string();
+        Ok(HeaderValue::try_from(cookie).unwrap())
+    }
 }

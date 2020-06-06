@@ -83,10 +83,7 @@ pub async fn login(
         cred => cred.map_err(reject::custom),
     }?;
 
-    let (uuid, expiry_time) = sessions.login(user_id).await;
-    let cookie = cookie::CookieBuilder::new(crate::session::COOKIE_NAME, format!("{}", uuid))
-        .max_age(expiry_time)
-        .finish();
+    let session = sessions.login(user_id).await;
 
     let location = match &login_query.return_to {
         Some(url) => url.as_str(),
@@ -94,7 +91,7 @@ pub async fn login(
     };
     Ok(warp::http::Response::builder()
         .status(301)
-        .header("Set-Cookie", format!("{}", cookie))
+        .header("Set-Cookie", session)
         .header("Location", location)
         .body("".to_string())
         .unwrap())
@@ -107,7 +104,7 @@ pub async fn logout(
     sessions.logout(user_id).await;
     Ok(warp::http::Response::builder()
         .status(StatusCode::PERMANENT_REDIRECT)
-        .header("Set-Cookie", &crate::session::clear_browser_cookie())
+        .header("Set-Cookie", crate::session::ClearCookie)
         .header("Location", "/")
         .body("".to_string())
         .unwrap())

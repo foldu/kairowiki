@@ -40,7 +40,7 @@ pub async fn handle_rejection(
         response = response.status(StatusCode::PERMANENT_REDIRECT);
         match error {
             session::Error::CorruptedCookie => response
-                .header("Set-Cookie", &crate::session::clear_browser_cookie())
+                .header("Set-Cookie", crate::session::ClearCookie)
                 .header("Location", "/")
                 .body("".to_string())
                 .unwrap(),
