@@ -38,7 +38,6 @@ impl ArticleTitle {
             return Err(TitleError::InvalidExtension);
         }
 
-        println!("{:#?}", path);
         let path = path.strip_prefix(root).unwrap();
 
         path.with_extension("")

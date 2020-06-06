@@ -49,7 +49,8 @@ pub async fn register(data: Data, form: forms::Register) -> Result<impl Reply, R
 pub async fn login_form(data: Data) -> Result<impl warp::Reply, Rejection> {
     Ok(render!(templates::Login {
         wiki: data.wiki(),
-        registration_enabled: data.registration_possible()
+        registration_enabled: data.registration_possible(),
+        error: None
     }))
 }
 
@@ -64,11 +65,23 @@ pub async fn login(
     form: forms::Login,
     login_query: LoginQuery,
 ) -> Result<impl warp::Reply, Rejection> {
-    let user_id = data
+    use crate::user_storage::Error::*;
+    let user_id = match data
         .user_storage
         .check_credentials(&form.name, &form.password)
         .await
-        .map_err(reject::custom)?;
+    {
+        Err(e @ UserDoesNotExist | e @ InvalidPassword) => {
+            return Ok(warp::http::Response::builder()
+                .status(warp::http::StatusCode::FORBIDDEN)
+                .body(
+                    askama::Template::render(&templates::Login::new(&data, Some(&e.to_string())))
+                        .unwrap(),
+                )
+                .unwrap());
+        }
+        cred => cred.map_err(reject::custom),
+    }?;
 
     let (uuid, expiry_time) = sessions.login(user_id).await;
     let cookie = cookie::CookieBuilder::new(crate::session::COOKIE_NAME, format!("{}", uuid))
@@ -83,7 +96,7 @@ pub async fn login(
         .status(301)
         .header("Set-Cookie", format!("{}", cookie))
         .header("Location", location)
-        .body("")
+        .body("".to_string())
         .unwrap())
 }
 

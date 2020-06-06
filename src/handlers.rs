@@ -2,7 +2,7 @@ pub mod auth;
 pub mod search;
 pub mod wiki;
 
-use crate::{error::Error, templates};
+use crate::{error::Error, relative_url::RelativeUrl, templates};
 use warp::{http::StatusCode, Rejection};
 
 pub fn unimplemented() -> Result<impl warp::Reply, Rejection> {
@@ -45,11 +45,13 @@ pub async fn handle_rejection(
                 .body("".to_string())
                 .unwrap(),
             session::Error::SessionRequired { access_url } => {
-                // FIXME: there must be a better way to do this
-                // sadly the `url` crate can only do absolute urls
-                let location = format!("/login?return_to={}", urlencoding::encode(access_url));
+                let location = RelativeUrl::builder("/login")
+                    .unwrap()
+                    .query("return_to", access_url)
+                    .build();
+
                 response
-                    .header("Location", location)
+                    .header("Location", location.as_ref())
                     .body("".to_string())
                     .unwrap()
             }

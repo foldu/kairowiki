@@ -22,6 +22,17 @@ pub struct WikiPage<'a> {
 pub struct Login<'a> {
     pub wiki: Wiki<'a>,
     pub registration_enabled: bool,
+    pub error: Option<&'a str>,
+}
+
+impl<'a> Login<'a> {
+    pub fn new(data: &'a crate::data::Data, error: Option<&'a str>) -> Self {
+        Login {
+            wiki: data.wiki(),
+            registration_enabled: data.registration_possible(),
+            error,
+        }
+    }
 }
 
 #[derive(Template)]

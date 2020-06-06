@@ -1,3 +1,4 @@
+#![feature(or_patterns)]
 #[macro_use]
 mod macros;
 mod article;
@@ -7,6 +8,7 @@ mod forms;
 mod git;
 mod handlers;
 mod migrations;
+mod relative_url;
 mod session;
 mod sqlite;
 mod templates;

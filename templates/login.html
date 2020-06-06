@@ -3,6 +3,12 @@
 {% block content %}
 <!--- action intentionally left out  --->
 <main class="flex-centered">
+
+    {% match error %}
+        {% when Some with (error) %}
+            {{ error }}
+        {% when None %}
+    {% endmatch %}
     <form method="POST">
         <ul class="vertical-form-list">
             <li>
