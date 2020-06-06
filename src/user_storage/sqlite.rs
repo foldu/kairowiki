@@ -1,4 +1,4 @@
-use snafu::ResultExt;
+use crate::migrations::{Migration, MigrationInfo, NeedsMigration};
 use std::path::PathBuf;
 
 #[derive(snafu::Snafu, Debug)]
@@ -8,15 +8,6 @@ pub enum ConnectionError {
         parent: PathBuf,
         source: std::io::Error,
     },
-
-    #[snafu(display("Could not stat {}: {}", path, source))]
-    Stat {
-        path: String,
-        source: std::io::Error,
-    },
-
-    #[snafu(display("Could not create schema: {}", source))]
-    CreateSchema { source: sqlx::Error },
 
     #[snafu(display("Can't open sqlite database {}: {}", path, source))]
     Connect { path: String, source: sqlx::Error },
@@ -39,44 +30,14 @@ impl From<sqlx::Error> for super::Error {
 pub struct SqliteStorage(sqlx::SqlitePool);
 
 impl SqliteStorage {
-    pub async fn open(path: &str, max_connections: u32) -> Result<Self, ConnectionError> {
-        if let Some(parent) = std::path::Path::new(path).parent() {
-            tokio::fs::create_dir_all(parent)
-                .await
-                .with_context(|| CreateParent {
-                    parent: parent.to_owned(),
-                })?;
-        }
+    pub async fn new(pool: sqlx::SqlitePool) -> Result<NeedsMigration<Self>, ConnectionError> {
+        Ok(NeedsMigration::new(Self(pool)))
+    }
+}
 
-        // FIXME: do proper migrations
-        let create_schema = match tokio::fs::metadata(&path).await {
-            Err(e) if e.kind() == std::io::ErrorKind::NotFound => true,
-            other => other
-                .with_context(|| Stat {
-                    path: path.to_owned(),
-                })
-                .map(|_| false)?,
-        };
-
-        let url = format!("sqlite://{}", path);
-        let pool = sqlx::SqlitePool::builder()
-            .max_size(max_connections)
-            .build(&url)
-            .await
-            .with_context(|| Connect {
-                path: path.to_owned(),
-            })?;
-
-        let mut cxn = pool.acquire().await.unwrap();
-
-        if create_schema {
-            sqlx::query(include_str!("../../schema.sql"))
-                .execute(&mut cxn)
-                .await
-                .context(CreateSchema)?;
-        }
-
-        Ok(Self(pool))
+impl MigrationInfo for SqliteStorage {
+    fn migrations(&self) -> &'static [Migration] {
+        &[migration!("user_schema")]
     }
 }
 

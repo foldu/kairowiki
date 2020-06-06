@@ -19,11 +19,14 @@ impl Data {
             other => other.map(|_| ()).context("Could not open git repository")?,
         };
 
-        let storage =
-            crate::user_storage::SqliteStorage::open(&cfg.db_file, cfg.db_pool_size).await?;
+        let pool = crate::sqlite::open(&cfg.db_file, cfg.db_pool_size).await?;
+        let migrations = crate::migrations::Migrations::new(pool.clone()).await?;
+        let user_storage = migrations
+            .run(crate::user_storage::SqliteStorage::new(pool.clone()).await?)
+            .await?;
 
         Ok(Self(Arc::new(DataInner {
-            user_storage: Box::new(storage),
+            user_storage: Box::new(user_storage),
             config: cfg,
         })))
     }

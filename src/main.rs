@@ -6,7 +6,9 @@ mod error;
 mod forms;
 mod git;
 mod handlers;
+mod migrations;
 mod session;
+mod sqlite;
 mod templates;
 mod user_storage;
 

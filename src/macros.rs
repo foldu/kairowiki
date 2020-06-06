@@ -33,3 +33,18 @@ macro_rules! boxed_on_debug {
         $x
     };
 }
+
+macro_rules! sql_file {
+    ($ident:expr) => {
+        include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/sql/", $ident, ".sql"))
+    };
+}
+
+macro_rules! migration {
+    ($ident:expr) => {
+        crate::migrations::Migration {
+            ident: $ident,
+            migration: sql_file!($ident),
+        }
+    };
+}

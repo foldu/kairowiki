@@ -1,0 +1,3 @@
+CREATE TABLE IF NOT EXISTS migrations (
+    ident TEXT PRIMARY KEY NOT NULL
+);
