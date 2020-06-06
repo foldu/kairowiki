@@ -98,7 +98,14 @@ impl<'a> RelativeUrl<'a> {
             query: SmallVec::new(),
         })
     }
+
+    pub fn owned(self) -> RelativeUrlOwned {
+        RelativeUrlOwned(self.0.into_owned())
+    }
 }
+
+#[derive(derive_more::AsRef)]
+pub struct RelativeUrlOwned(String);
 
 impl<'a> AsRef<str> for RelativeUrl<'a> {
     fn as_ref(&self) -> &str {

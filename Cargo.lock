@@ -788,6 +788,7 @@ dependencies = [
  "async-trait",
  "blake3",
  "bstr",
+ "bytes",
  "cookie",
  "derive_more",
  "envy",

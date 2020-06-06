@@ -12,8 +12,4 @@ pkgs.mkShell rec {
     sqlite
     rust.rust
   ];
-
-  shellHook = ''
-    source .environment
-  '';
 }

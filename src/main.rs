@@ -4,6 +4,7 @@ mod macros;
 mod article;
 mod data;
 mod error;
+mod file_storage;
 mod forms;
 mod git;
 mod handlers;
@@ -105,9 +106,20 @@ async fn run() -> Result<(), anyhow::Error> {
     let logout = warp::path("logout")
         .and(warp::path::end())
         .and(warp::post())
-        .and(login_required)
+        .and(login_required.clone())
         .and(sessions)
         .and_then(handlers::auth::logout);
+
+    let file_storage = warp::path("storage");
+    let upload = file_storage
+        .and(warp::put())
+        .and(data_filter.clone())
+        .and(login_required.clone())
+        .and(warp::filters::multipart::form().max_length(5 * (1 << 20)))
+        .and_then(handlers::file_storage::upload);
+    let serve_files = file_storage
+        .and(warp::get())
+        .and(warp::fs::dir(data.config.storage_path.clone()));
 
     let routes = routes! {
         home,
@@ -122,7 +134,9 @@ async fn run() -> Result<(), anyhow::Error> {
         edit,
         history,
         logout,
-        edit_post
+        edit_post,
+        upload,
+        serve_files
     };
     let routes = routes.recover(handlers::handle_rejection);
 

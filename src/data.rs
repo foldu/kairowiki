@@ -1,3 +1,7 @@
+use crate::{
+    file_storage::{self, FileStorage},
+    user_storage::SqliteStorage,
+};
 use anyhow::Context;
 use git2::Repository;
 use std::{
@@ -22,11 +26,30 @@ impl Data {
         let pool = crate::sqlite::open(&cfg.db_file, cfg.db_pool_size).await?;
         let migrations = crate::migrations::Migrations::new(pool.clone()).await?;
         let user_storage = migrations
-            .run(crate::user_storage::SqliteStorage::new(pool.clone()).await?)
+            .run(SqliteStorage::new(pool.clone()).await?)
+            .await?;
+        let file_storage = migrations
+            .run(
+                FileStorage::new(
+                    pool.clone(),
+                    file_storage::Config {
+                        storage_path: cfg.storage_path.clone(),
+                        allowed_mime_types: vec![
+                            mime::IMAGE_JPEG,
+                            mime::IMAGE_PNG,
+                            mime::IMAGE_GIF,
+                            mime::IMAGE_SVG,
+                        ],
+                        route: "/static/".to_owned(),
+                    },
+                )
+                .await?,
+            )
             .await?;
 
         Ok(Self(Arc::new(DataInner {
             user_storage: Box::new(user_storage),
+            file_storage,
             config: cfg,
         })))
     }
@@ -62,6 +85,7 @@ fn mkdir_p(path: impl AsRef<Path>) -> Result<(), anyhow::Error> {
 pub struct DataInner {
     pub user_storage: Box<dyn crate::user_storage::UserStorage>,
     pub config: Config,
+    pub file_storage: crate::file_storage::FileStorage,
 }
 
 pub struct Wiki<'a> {
@@ -98,6 +122,9 @@ pub struct Config {
 
     #[serde(default = "tru")]
     pub registration_enabled: bool,
+
+    #[serde(default = "default_storage_path")]
+    pub storage_path: String,
 }
 
 fn tru() -> bool {
@@ -134,4 +161,8 @@ fn default_footer() -> String {
 
 fn default_home_wiki_page() -> String {
     "kairowiki".to_string()
+}
+
+fn default_storage_path() -> String {
+    "/data/storage".into()
 }

@@ -13,6 +13,11 @@
 <div id="markdown" class="hidden">{{ markdown }}</div>
 <main id="edit">
     <div id="editor"></div>
+    <div id="file-upload">
+        <input type="file" id="file-input">
+        <ul id="file-list">
+        </ul>
+    </div>
     <button id="save-button" type="submit">Save</button>
 </main>
 {% endblock %}
@@ -39,6 +44,22 @@
           language: "markdown"
       });
     });
+
+    (() => {
+        const fileInput = document.querySelector("#file-input");
+        fileInput.addEventListener("change", async () => {
+            const file = fileInput.files[0];
+            const data = new FormData();
+            data.append("file", file);
+            const resp = await fetch("/storage", {
+                method: "PUT",
+                credentials: "same-origin",
+                body: data,
+            });
+            console.log(resp);
+        });
+    })()
+
 
     document.querySelector("#save-button").addEventListener("click", () => {
         const title = document.querySelector("#title").innerHTML;
