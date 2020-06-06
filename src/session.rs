@@ -1,4 +1,5 @@
 use crate::user_storage::UserId;
+use futures_util::TryFutureExt;
 use std::{collections::BTreeMap, sync::Arc, time::Duration};
 use time::OffsetDateTime;
 use tokio::{stream::StreamExt, sync::RwLock};
@@ -164,38 +165,46 @@ pub enum Error {
     SessionRequired { access_url: String },
 }
 
+impl From<uuid::Error> for Error {
+    fn from(_: uuid::Error) -> Self {
+        Error::CorruptedCookie
+    }
+}
+
 impl warp::reject::Reject for Error {}
 
 pub const COOKIE_NAME: &str = "warp-session";
 
 pub fn login_required(
     sessions: crate::session::Sessions,
-) -> impl warp::Filter<Extract = (crate::user_storage::UserId,), Error = warp::Rejection> + Clone {
+) -> impl warp::Filter<Extract = (UserId,), Error = warp::Rejection> + Clone {
     use warp::Filter;
     warp::path::full()
         .and(warp::filters::cookie::optional(COOKIE_NAME))
-        .and_then(
-            move |path: warp::path::FullPath, cookie_cont: Option<String>| {
-                let sessions = sessions.clone();
-                async move {
-                    // TODO: extract this into a function
-                    let cookie_cont = cookie_cont
-                        .ok_or_else(|| Error::SessionRequired {
-                            access_url: path.as_str().to_owned(),
-                        })
-                        .map_err(warp::reject::custom)?;
-                    let session_id = Uuid::parse_str(&cookie_cont)
-                        .map_err(|_| warp::reject::custom(Error::CorruptedCookie))?;
-                    let user_id = sessions.get_user_id(session_id).await;
+        .and_then(move |path: warp::path::FullPath, cookie: Option<String>| {
+            let sessions = sessions.clone();
+            get_session(sessions, path, cookie).map_err(warp::reject::custom)
+        })
+}
 
-                    user_id
-                        .ok_or_else(|| Error::SessionRequired {
-                            access_url: path.as_str().to_owned(),
-                        })
-                        .map_err(warp::reject::custom)
-                }
-            },
-        )
+async fn get_session(
+    sessions: Sessions,
+    path: warp::path::FullPath,
+    cookie: Option<String>,
+) -> Result<UserId, Error> {
+    let path = path.as_str();
+    let cookie_cont = cookie.ok_or_else(|| Error::SessionRequired {
+        access_url: path.to_owned(),
+    })?;
+
+    let session_id = Uuid::parse_str(&cookie_cont)?;
+
+    sessions
+        .get_user_id(session_id)
+        .await
+        .ok_or_else(|| Error::SessionRequired {
+            access_url: path.to_owned(),
+        })
 }
 
 pub struct LoginSession {
