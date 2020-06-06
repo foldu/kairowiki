@@ -40,7 +40,7 @@ impl Data {
                             mime::IMAGE_GIF,
                             mime::IMAGE_SVG,
                         ],
-                        route: "/static/".to_owned(),
+                        route: "/storage".to_owned(),
                     },
                 )
                 .await?,

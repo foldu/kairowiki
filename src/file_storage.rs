@@ -39,7 +39,6 @@ impl FileStorage {
         let mime = Mime::from_str(&tree_magic::from_u8(file))
             .expect("tree_magic returned invalid mime type");
 
-        std::fs::write("/tmp/xd", file);
         if !self.config.allowed_mime_types.contains(&mime) {
             return Err(Error::InvalidMime { mime });
         }
@@ -62,13 +61,15 @@ impl FileStorage {
                     mime_extension(&mime).ok_or_else(|| Error::UnhandledMime { mime })?;
                 // this is UNIX only so we can format (utf-8)paths
                 let relative_path = format!("{}.{}", hash.to_hex(), extension);
-                let target = format!("{}/{}", self.config.storage_path, relative_path);
+                {
+                    let target = format!("{}/{}", self.config.storage_path, relative_path);
 
-                tokio::fs::write(&target, file).await.unwrap();
+                    tokio::fs::write(&target, file).await.unwrap();
+                }
 
                 sqlx::query!(
                     "INSERT INTO file_hash(relative_path, hash) VALUES (?, ?)",
-                    target,
+                    relative_path,
                     &hash.as_bytes()[..]
                 )
                 .execute(&mut *cxn)

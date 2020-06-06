@@ -67,3 +67,13 @@ footer {
     /* FIXME: I have no idea how css works */
     height: 600px;
 }
+
+#file-list {
+    list-style-type: none;
+    display: flex;
+    flex-direction: column;
+}
+
+#file-list > li {
+    display: flex;
+}
