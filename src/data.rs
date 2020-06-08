@@ -60,7 +60,7 @@ impl Data {
         Wiki {
             name: &self.config.wiki_name,
             footer: &self.config.footer,
-            logo: "/static/dancing_green_fluorescent_alien.gif",
+            logo: "/static/logo.svg",
         }
     }
 

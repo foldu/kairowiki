@@ -10,8 +10,3 @@ pub struct Register {
     pub email: String,
     pub password: String,
 }
-
-#[derive(serde::Deserialize)]
-pub struct NewArticle {
-    pub markdown: String,
-}

@@ -8,6 +8,7 @@ mod file_storage;
 mod forms;
 mod git;
 mod handlers;
+mod markdown;
 mod migrations;
 mod relative_url;
 mod session;
@@ -38,8 +39,7 @@ async fn run() -> Result<(), anyhow::Error> {
 
     let root = warp::get().and(warp::path::end());
 
-    let search = warp::path("search")
-        .and(warp::path::end())
+    let search = warp::path!("search")
         .and(data_filter.clone())
         .and(warp::query())
         .and_then(handlers::search::search_repo);
@@ -50,12 +50,11 @@ async fn run() -> Result<(), anyhow::Error> {
     let home = root.map(move || warp::redirect(home_url.clone()));
 
     let wiki = warp::get().and(warp::path("wiki"));
+    let wiki_article = crate::article::wiki_article(data.clone());
     let wiki_home = wiki
         .and(warp::path::end())
         .map(|| warp::redirect(Uri::from_static("/")));
-    let wiki_route = data_filter
-        .clone()
-        .and(crate::article::wiki_article(data.clone()));
+    let wiki_route = data_filter.clone().and(wiki_article.clone());
 
     let wiki_entries = wiki
         .and(wiki_route.clone())
@@ -68,17 +67,13 @@ async fn run() -> Result<(), anyhow::Error> {
         .clone()
         .and(warp::get())
         .and_then(handlers::wiki::edit);
-    let edit_post = edit_route
-        .and(warp::post())
-        .and(warp::body::json())
-        .and_then(handlers::wiki::edit_post);
 
     let history = warp::path("history")
         .and(warp::get())
         .and(wiki_route)
         .and_then(handlers::wiki::history);
 
-    let register_path = warp::path("register").and(warp::path::end());
+    let register_path = warp::path!("register");
     let register_form = register_path
         .and(warp::get())
         .and(data_filter.clone())
@@ -90,7 +85,7 @@ async fn run() -> Result<(), anyhow::Error> {
         .and(warp::filters::body::form())
         .and_then(handlers::auth::register);
 
-    let login_path = warp::path("login").and(warp::path::end());
+    let login_path = warp::path!("login");
     let login_form = login_path
         .and(warp::get())
         .and(data_filter.clone())
@@ -103,8 +98,7 @@ async fn run() -> Result<(), anyhow::Error> {
         .and(warp::filters::body::form())
         .and(warp::query())
         .and_then(handlers::auth::login);
-    let logout = warp::path("logout")
-        .and(warp::path::end())
+    let logout = warp::path!("logout")
         .and(warp::post())
         .and(login_required.clone())
         .and(sessions)
@@ -121,6 +115,22 @@ async fn run() -> Result<(), anyhow::Error> {
         .and(warp::get())
         .and(warp::fs::dir(data.config.storage_path.clone()));
 
+    let api = warp::path("api").and(warp::body::content_length_limit(2 * (1 << 20)));
+    let preview = api
+        .and(warp::path!("preview"))
+        .and(warp::post())
+        .and(login_required.clone())
+        .and(warp::body::json())
+        .and_then(handlers::api::preview);
+    let edit_submit = api
+        .and(warp::path("edit"))
+        .and(data_filter.clone())
+        .and(wiki_article.clone())
+        .and(login_required.clone())
+        .and(warp::put())
+        .and(warp::body::json())
+        .and_then(handlers::api::edit_submit);
+
     let routes = routes! {
         home,
         wiki_home,
@@ -134,9 +144,10 @@ async fn run() -> Result<(), anyhow::Error> {
         edit,
         history,
         logout,
-        edit_post,
         upload,
-        serve_files
+        serve_files,
+        preview,
+        edit_submit
     };
     let routes = routes.recover(handlers::handle_rejection);
 

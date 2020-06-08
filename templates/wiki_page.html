@@ -2,15 +2,15 @@
 {% block title %} {{ wiki.name }} - {{ title }} {% endblock %}
 
 {% block content %}
-<main id="wiki-article">
-    <div id="wiki-article-head" class="center-padded">
+<main id="wiki-article" class="text-content">
+    <div id="wiki-article-head">
         <h1 class="wiki-article-title">{{ title }}</h1>
         <div class="buttons">
             <a href="/edit/{{ title }}"><button>Edit</button></a>
             <a href="/history/{{ title }}"><button>History</button></a>
         </div>
     </div>
-    <article class="center-padded">
+    <article>
         {{ content|safe }}
     </article>
 </main>

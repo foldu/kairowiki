@@ -14,7 +14,7 @@ pub fn commit_article(
     git_repo: &std::path::Path,
     article: &crate::article::WikiArticle,
     account: &crate::user_storage::UserAccount,
-    new_article: &crate::forms::NewArticle,
+    edit: &crate::handlers::api::EditSubmit,
 ) -> Result<(), Error> {
     let repo = git2::Repository::open(git_repo)?;
     let mut sleep_time = std::time::Duration::from_millis(10);
@@ -32,7 +32,7 @@ pub fn commit_article(
     let mut index = index?;
 
     // TODO: hard reset repository if this fails
-    std::fs::write(&*article.path, &new_article.markdown).map_err(Error::Write)?;
+    std::fs::write(&*article.path, &edit.markdown).map_err(Error::Write)?;
 
     let relative_to_repo = article
         .path
