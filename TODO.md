@@ -4,9 +4,10 @@
 - [ ] write readme
 - [x] badge link to build status and dockerhub
 - [ ] fix css
-- [ ] make editing articles work
+- [?] make editing articles work
 - [ ] LDAP user storage
-- [ ] make logo
+- [x] make logo
 - [x] graceful shutdown
 - [x] do proper migrations
 - [x] loglevel environment variable
+- [ ] isolate rendered markdown (csp should be ok enough?)
