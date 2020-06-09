@@ -5,8 +5,8 @@
 <div id="markdown" class="hidden">{{ markdown|safe }}</div>
 <main id="edit">
     <div id="selection">
-        <button onclick="switchToEdit()">Edit</button>
-        <button onclick="switchToPreview()">Preview</button>
+        <button class="ribbon active" id="edit-button" onclick="switchToEdit()">Edit</button>
+        <button class="ribbon" id="preview-button" onclick="switchToPreview()">Preview</button>
     </div>
     <div id="editor-tab">
         <div id="editor"></div>
@@ -14,14 +14,13 @@
             <ul id="file-list">
                 <input type="file" class="file-input">
                 <div class="file-link"></div>
-                <button>Delete</button>
                 </li>
             </ul>
         </div>
         <button id="save-button" type="submit">Save</button>
     </div>
     <div id="preview-tab" class="hidden text-content">
-        <article>
+        <article class="rendered-markdown">
         </article>
     </div>
 </main>

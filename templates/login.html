@@ -20,11 +20,11 @@
                 <input type="password" id="password" name="password" required>
             </li>
             <li>
-                <input type="submit" value="Login">
+                <button type="submit">Login</button>
             </li>
     </form>
     {% if registration_enabled %}
-        <a href="/register">Register</a>
+        Not registered yet? Click here to <a href="/register">Register</a>
     {% endif %}
 </main>
 {% endblock %}

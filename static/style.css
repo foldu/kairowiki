@@ -5,21 +5,68 @@ body {
 
 nav > ul {
     display: flex;
-    justify-content: space-between;
+    justify-content: space-around;
+    align-items: center;
     list-style-type: none;
+    margin: auto;
 }
 
 .text-content {
     max-width: 60rem;
+    min-width: 40rem;
     padding: 2rem;
     margin: auto;
+}
+
+.rendered-markdown > h1 > a,
+.rendered-markdown > h2 > a,
+.rendered-markdown > h3 > a,
+.rendered-markdown > h4 > a,
+.rendered-markdown > h5 > a,
+.rendered-markdown > h6 > a {
+    text-decoration: none;
+    color: black;
+}
+
+.rendered-markdown > h1 > a:hover::before,
+.rendered-markdown > h2 > a:hover::before,
+.rendered-markdown > h3 > a:hover::before,
+.rendered-markdown > h4 > a:hover::before,
+.rendered-markdown > h5 > a:hover::before,
+.rendered-markdown > h6 > a:hover::before {
+    content: "§ ";
+}
+
+button {
+    border: 1px solid;
+    color: black;
+    background: #f0f0f0;
+    padding: 1em 1em;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+}
+
+button:hover {
+    background: lightgray;
+}
+
+button.ribbon {
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    border-bottom: none;
+}
+
+button.ribbon.active {
+    border-bottom: 2px solid;
 }
 
 body {
     font-family: Liberation Sans, Noto Sans, Sans;
 }
 
-code {
+pre {
     font-family: Iosevka, Fira Mono, Monaco, monospace;
 }
 
@@ -38,6 +85,16 @@ code {
     font-size: 1em;
 }
 
+#searchbox {
+    display: flex;
+    height: 2rem;
+    font-size: 2rem;
+}
+
+#searchbox input[type="search"] {
+    font-size: 1.2rem;
+}
+
 #search-submit {
     background-image: linear-gradient(transparent, transparent),
         url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%2213%22%3E %3Cg fill=%22none%22 stroke=%22%2354595d%22 stroke-width=%222%22%3E %3Cpath d=%22M11.29 11.71l-4-4%22/%3E %3Ccircle cx=%225%22 cy=%225%22 r=%224%22/%3E %3C/g%3E %3C/svg%3E");
@@ -51,6 +108,16 @@ code {
     list-style-type: none;
 }
 
+.vertical-form-list > li {
+    display: flex;
+    font-size: 1em;
+    justify-content: space-between;
+}
+
+.vertical-form-list > li > * {
+    margin: 1rem;
+}
+
 .flex-centered {
     display: flex;
     justify-content: center;
@@ -58,9 +125,9 @@ code {
 }
 
 .hidden {
-    display: none;
+    /* __really__ hide */
+    display: none !important;
 }
-
 
 /* FIXME: */
 footer {
@@ -70,6 +137,12 @@ footer {
 #edit {
     display: flex;
     flex-direction: column;
+}
+
+#editor-tab {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
 #editor {

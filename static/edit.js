@@ -70,16 +70,47 @@ document.querySelector("#save-button").addEventListener("click", async () => {
     }
 });
 
+function switchTo(elt) {
+    const classList = elt.classList;
+    const wasActive = classList.contains("hidden");
+    if (!wasActive) {
+        classList.add("active");
+        classList.remove("hidden");
+    }
+
+    return wasActive;
+}
+
+const tabs = [
+    [document.querySelector("#edit-button"), document.querySelector("#editor-tab")],
+    [document.querySelector("#preview-button"), document.querySelector("#preview-tab")],
+];
+
+function switchTo(targetTab) {
+    if (!targetTab.classList.contains("hidden")) {
+        return false;
+    }
+
+    targetTab.classList.remove("hidden");
+
+    for (const [button, tab] of tabs) {
+        if (tab === targetTab) {
+            button.classList.add("active");
+        } else {
+            button.classList.remove("active");
+            tab.classList.add("hidden");
+        }
+    }
+
+    return true;
+}
+
 function switchToEdit() {
-    document.querySelector("#preview-tab").classList.add("hidden");
-    document.querySelector("#editor-tab").classList.remove("hidden");
+    switchTo(document.querySelector("#editor-tab"));
 }
 
 async function switchToPreview() {
-    document.querySelector("#editor-tab").classList.add("hidden");
-    const previewClassList = document.querySelector("#preview-tab").classList;
-    const needsRender = previewClassList.contains("hidden");
-    previewClassList.remove("hidden");
+    const needsRender = switchTo(document.querySelector("#preview-tab"));
     if (needsRender) {
         const article = document.querySelector("#preview-tab > article");
         article.innerHTML = "Rendering preview";
@@ -96,7 +127,6 @@ async function switchToPreview() {
 
         if (response.status === 200) {
             const json = await response.json();
-            console.log(json.rendered);
             article.innerHTML = json.rendered;
         }
     }
