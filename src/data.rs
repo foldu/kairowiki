@@ -48,11 +48,12 @@ impl Data {
             )
             .await?;
 
+        let theme_path = cfg.static_dir.join("hl.css");
         Ok(Self(Arc::new(DataInner {
             user_storage: Box::new(user_storage),
             file_storage,
+            markdown_renderer: MarkdownRenderer::new(&cfg.syntax_theme_name, theme_path)?,
             config: cfg,
-            markdown_renderer: MarkdownRenderer::new(),
         })))
     }
 }
@@ -128,6 +129,9 @@ pub struct Config {
 
     #[serde(default = "default_storage_path")]
     pub storage_path: String,
+
+    #[serde(default = "default_theme_name")]
+    pub syntax_theme_name: String,
 }
 
 fn tru() -> bool {
@@ -168,4 +172,8 @@ fn default_home_wiki_page() -> String {
 
 fn default_storage_path() -> String {
     "/data/storage".into()
+}
+
+fn default_theme_name() -> String {
+    "InspiredGitHub".to_owned()
 }

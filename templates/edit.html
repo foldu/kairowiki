@@ -2,7 +2,7 @@
 
 {% block content %}
 <div id="title" class="hidden">{{ title }}</div>
-<div id="markdown" class="hidden">{{ markdown }}</div>
+<div id="markdown" class="hidden">{{ markdown|safe }}</div>
 <main id="edit">
     <div id="selection">
         <button onclick="switchToEdit()">Edit</button>

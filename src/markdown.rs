@@ -1,10 +1,13 @@
 use crate::templates::HeadlineStart;
 use askama::Template;
 use pulldown_cmark::{CodeBlockKind, CowStr, Event, Options, Tag};
-use std::collections::VecDeque;
+use std::{
+    collections::VecDeque,
+    path::{Path, PathBuf},
+};
 use syntect::{
-    highlighting::{Theme, ThemeSet},
-    html::highlighted_html_for_string,
+    highlighting::ThemeSet,
+    html::{css_for_theme, ClassedHTMLGenerator},
     parsing::{Scope, SyntaxSet},
 };
 
@@ -16,7 +19,6 @@ struct ParserWrap<'a> {
 
 pub struct MarkdownRenderer {
     syntax_set: SyntaxSet,
-    theme: Theme,
 }
 
 fn title_to_id(title: &str) -> String {
@@ -30,20 +32,53 @@ fn title_to_id(title: &str) -> String {
     ret
 }
 
+#[derive(thiserror::Error, Debug)]
+pub enum Error {
+    #[error("Unknown theme: {}, allowed: {}", theme_name, theme_list)]
+    ThemeNotFound {
+        theme_name: String,
+        theme_list: String,
+    },
+
+    #[error("Can't write theme to {}: {}", path.display(), source)]
+    WriteTheme {
+        path: PathBuf,
+        source: std::io::Error,
+    },
+}
+
 impl MarkdownRenderer {
-    pub fn new() -> Self {
-        // TODO: make theme configurable
+    pub fn new(theme_name: &str, theme_path: impl AsRef<Path>) -> Result<Self, Error> {
         let theme_set = ThemeSet::load_defaults();
         let theme = theme_set
             .themes
-            .get("InspiredGitHub")
+            .get(theme_name)
             .map(|theme| theme.to_owned())
-            .unwrap();
+            .ok_or_else(|| {
+                let theme_list = theme_set
+                    .themes
+                    .keys()
+                    .map(|k| k.as_str())
+                    .collect::<Vec<_>>()
+                    .join(", ");
 
-        Self {
+                Error::ThemeNotFound {
+                    theme_name: theme_name.into(),
+                    theme_list,
+                }
+            })?;
+
+        let theme_path = theme_path.as_ref();
+        std::fs::write(theme_path, css_for_theme(&theme).as_bytes()).map_err(|source| {
+            Error::WriteTheme {
+                path: theme_path.to_owned(),
+                source,
+            }
+        })?;
+
+        Ok(Self {
             syntax_set: SyntaxSet::load_defaults_newlines(),
-            theme,
-        }
+        })
     }
 
     pub fn render(&self, markdown: &str) -> String {
@@ -67,7 +102,15 @@ impl MarkdownRenderer {
                 self.syntax_set.find_syntax_by_scope(source_scope).unwrap()
             });
 
-        highlighted_html_for_string(s, &self.syntax_set, syntax, &self.theme)
+        let mut gen = ClassedHTMLGenerator::new(&syntax, &self.syntax_set);
+        for ln in s.lines() {
+            gen.parse_html_for_line(ln);
+        }
+        gen.finalize()
+    }
+
+    fn highlight_block(&self, s: &str, language: Option<&str>) -> String {
+        format!("<pre>{}</pre>", self.highlight(s, language))
     }
 }
 
@@ -135,7 +178,9 @@ impl<'a> Iterator for ParserWrap<'a> {
                             CodeBlockKind::Indented => None,
                         };
 
-                        Some(Event::Html(CowStr::from(self.renderer.highlight(s, lang))))
+                        Some(Event::Html(CowStr::from(
+                            self.renderer.highlight_block(s, lang),
+                        )))
                     }
                     // this probably can't happen but if it happens just put it back
                     _ => {
