@@ -80,16 +80,20 @@ impl<'a> Iterator for ParserWrap<'a> {
         }
 
         let evt = self.it.next()?;
+        // NOTE: self.extra is empty here
         match evt {
             Event::Start(Tag::Heading(n)) => {
                 let n = std::cmp::max(std::cmp::min(n, 6), 1);
-                // can generate head link
                 match self.it.next() {
+                    // it has text so we can create headline
                     Some(Event::Text(headline)) => {
+                        // defer all other events
                         self.extra.push_back(Event::Text(headline.clone()));
+                        // consume input until we find the headline closing
                         while let Some(next) = self.it.next() {
                             match next {
                                 Event::End(Tag::Heading(_)) => {
+                                    // close opened link tag
                                     self.extra
                                         .push_back(Event::Html(String::from("</a>").into()));
                                     self.extra.push_back(next);
@@ -99,6 +103,7 @@ impl<'a> Iterator for ParserWrap<'a> {
                             }
                         }
 
+                        // open link tag
                         Some(Event::Html(
                             HeadlineStart {
                                 strength: n,
@@ -110,10 +115,13 @@ impl<'a> Iterator for ParserWrap<'a> {
                             .into(),
                         ))
                     }
+                    // can't get a title from this
                     Some(other) => {
+                        // put it back
                         self.extra.push_back(other);
                         Some(evt)
                     }
+                    // empty headline
                     None => Some(evt),
                 }
             }
