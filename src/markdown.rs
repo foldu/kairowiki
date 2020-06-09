@@ -19,6 +19,17 @@ pub struct MarkdownRenderer {
     theme: Theme,
 }
 
+fn title_to_id(title: &str) -> String {
+    let prefix = "u-";
+    let mut ret = String::with_capacity(title.len() + prefix.len());
+    ret.push_str(prefix);
+    ret.extend(title.chars().map(|c| match c {
+        ' ' => '-',
+        c => c,
+    }));
+    ret
+}
+
 impl MarkdownRenderer {
     pub fn new() -> Self {
         // TODO: make theme configurable
@@ -92,6 +103,7 @@ impl<'a> Iterator for ParserWrap<'a> {
                             HeadlineStart {
                                 strength: n,
                                 headline: headline.as_ref(),
+                                id: &title_to_id(&headline),
                             }
                             .render()
                             .unwrap()
@@ -99,7 +111,7 @@ impl<'a> Iterator for ParserWrap<'a> {
                         ))
                     }
                     Some(other) => {
-                        self.extra.push_front(other);
+                        self.extra.push_back(other);
                         Some(evt)
                     }
                     None => Some(evt),
@@ -120,10 +132,10 @@ impl<'a> Iterator for ParserWrap<'a> {
                     // this probably can't happen but if it happens just put it back
                     _ => {
                         if let Some(text) = text {
-                            self.extra.push_front(text);
+                            self.extra.push_back(text);
                         }
                         if let Some(end) = end {
-                            self.extra.push_front(end);
+                            self.extra.push_back(end);
                         }
                         Some(evt)
                     }

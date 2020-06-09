@@ -74,6 +74,7 @@ pub struct RegisterRefresh<'a> {
 pub struct HeadlineStart<'a> {
     pub strength: u32,
     pub headline: &'a str,
+    pub id: &'a str,
 }
 
 #[derive(Template)]
