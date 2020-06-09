@@ -10,9 +10,17 @@ nav > ul {
 }
 
 .text-content {
-    max-width: 38rem;
+    max-width: 60rem;
     padding: 2rem;
     margin: auto;
+}
+
+body {
+    font-family: Liberation Sans, Noto Sans, Sans;
+}
+
+code {
+    font-family: Iosevka, Fira Mono, Monaco, monospace;
 }
 
 #wiki-article {

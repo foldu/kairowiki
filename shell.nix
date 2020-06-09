@@ -10,6 +10,5 @@ pkgs.mkShell rec {
     openssl
     pkg-config
     sqlite
-    rust.rust
   ];
 }

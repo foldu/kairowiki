@@ -7,7 +7,7 @@ use warp::{
 pub async fn show_entry(data: Data, article: WikiArticle) -> Result<impl Reply, Rejection> {
     // TODO: add rendering cache
     let body = match tokio::fs::read_to_string(article.path.as_ref()).await {
-        Ok(cont) => tokio::task::block_in_place(|| crate::markdown::render(&cont)),
+        Ok(cont) => tokio::task::block_in_place(|| data.markdown_renderer.render(&cont)),
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => format!(
             "Article with title {} not found, click on edit to create it",
             article.title.as_ref()

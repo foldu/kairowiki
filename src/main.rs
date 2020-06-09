@@ -118,6 +118,7 @@ async fn run() -> Result<(), anyhow::Error> {
     let api = warp::path("api").and(warp::body::content_length_limit(2 * (1 << 20)));
     let preview = api
         .and(warp::path!("preview"))
+        .and(data_filter.clone())
         .and(warp::post())
         .and(login_required.clone())
         .and(warp::body::json())

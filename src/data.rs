@@ -1,5 +1,6 @@
 use crate::{
     file_storage::{self, FileStorage},
+    markdown::MarkdownRenderer,
     user_storage::SqliteStorage,
 };
 use anyhow::Context;
@@ -51,6 +52,7 @@ impl Data {
             user_storage: Box::new(user_storage),
             file_storage,
             config: cfg,
+            markdown_renderer: MarkdownRenderer::new(),
         })))
     }
 }
@@ -86,6 +88,7 @@ pub struct DataInner {
     pub user_storage: Box<dyn crate::user_storage::UserStorage>,
     pub config: Config,
     pub file_storage: crate::file_storage::FileStorage,
+    pub markdown_renderer: MarkdownRenderer,
 }
 
 pub struct Wiki<'a> {

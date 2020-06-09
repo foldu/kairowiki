@@ -11,6 +11,7 @@ pub struct EditSubmit {
 }
 
 pub async fn preview(
+    data: Data,
     _user_id: UserId,
     request: Request,
 ) -> Result<impl warp::Reply, warp::Rejection> {
@@ -19,7 +20,7 @@ pub async fn preview(
         rendered: String,
     }
 
-    let md = crate::markdown::render(&request.markdown);
+    let md = data.markdown_renderer.render(&request.markdown);
     Ok(warp::reply::json(&RenderedMarkdown { rendered: md }))
 }
 

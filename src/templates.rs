@@ -70,6 +70,13 @@ pub struct RegisterRefresh<'a> {
 }
 
 #[derive(Template)]
+#[template(path = "headline_start.html")]
+pub struct HeadlineStart<'a> {
+    pub strength: u32,
+    pub headline: &'a str,
+}
+
+#[derive(Template)]
 #[template(path = "error.html")]
 pub struct Error<'a> {
     code: u16,
