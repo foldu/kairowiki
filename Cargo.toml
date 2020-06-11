@@ -40,3 +40,4 @@ bstr = "0.2.13"
 bytes = "0.5.4"
 syntect = { version = "4.2.0", features = ["html"] }
 once_cell = "1.4.0"
+url = { version = "2.1.1", features = ["serde"] }

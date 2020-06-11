@@ -152,12 +152,9 @@ async fn run() -> Result<(), anyhow::Error> {
         edit_submit
     };
 
-    let domain = data
-        .config
-        .domain
-        .as_ref()
-        .cloned()
-        .unwrap_or_else(|| format!("http://localhost:{}", data.config.port));
+    let domain = data.config.domain.as_ref().cloned().unwrap_or_else(|| {
+        url::Url::parse(&format!("http://localhost:{}", data.config.port)).unwrap()
+    });
 
     let cors = warp::cors()
         .allow_methods(vec!["GET", "PUT", "POST"])

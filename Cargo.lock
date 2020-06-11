@@ -840,6 +840,7 @@ dependencies = [
  "tracing-futures",
  "tracing-subscriber",
  "tree_magic",
+ "url",
  "urlencoding",
  "uuid",
  "warp",
@@ -2377,6 +2378,7 @@ dependencies = [
  "idna",
  "matches",
  "percent-encoding",
+ "serde",
 ]
 
 [[package]]
