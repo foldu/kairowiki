@@ -840,7 +840,6 @@ dependencies = [
  "tracing-futures",
  "tracing-subscriber",
  "tree_magic",
- "url",
  "urlencoding",
  "uuid",
  "warp",

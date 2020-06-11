@@ -10,4 +10,5 @@
 - [x] graceful shutdown
 - [x] do proper migrations
 - [x] loglevel environment variable
-- [ ] isolate rendered markdown (csp should be ok enough?)
+- [x] isolate rendered markdown (csp should be ok enough?)
+- [ ] get monaco web worker to work

@@ -132,6 +132,8 @@ pub struct Config {
 
     #[serde(default = "default_theme_name")]
     pub syntax_theme_name: String,
+
+    pub domain: Option<String>,
 }
 
 fn tru() -> bool {

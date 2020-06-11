@@ -2,6 +2,7 @@
 #[macro_use]
 mod macros;
 mod article;
+mod csp;
 mod data;
 mod error;
 mod file_storage;
@@ -150,7 +151,30 @@ async fn run() -> Result<(), anyhow::Error> {
         preview,
         edit_submit
     };
-    let routes = routes.recover(handlers::handle_rejection);
+
+    let domain = data
+        .config
+        .domain
+        .as_ref()
+        .cloned()
+        .unwrap_or_else(|| format!("http://localhost:{}", data.config.port));
+
+    let cors = warp::cors()
+        .allow_methods(vec!["GET", "PUT", "POST"])
+        .allow_credentials(true)
+        .allow_origin(domain.as_str())
+        .allow_origin("https://cdnjs.cloudflare.com")
+        .build();
+
+    let csp = csp::Builder::new()
+        .host_source(domain.as_str())
+        .host_source("https://cdnjs.cloudflare.com")
+        .build();
+
+    let routes = routes
+        .recover(handlers::handle_rejection)
+        .with(cors)
+        .with(csp);
 
     let term = signal(SignalKind::terminate()).unwrap();
     let int = signal(SignalKind::interrupt()).unwrap();
