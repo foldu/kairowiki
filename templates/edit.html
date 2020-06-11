@@ -3,10 +3,11 @@
 {% block content %}
 <div id="title" class="hidden">{{ title }}</div>
 <div id="markdown" class="hidden">{{ markdown|safe }}</div>
+
 <main id="edit">
-    <div id="selection">
-        <button class="ribbon active" id="edit-button" onclick="switchToEdit()">Edit</button>
-        <button class="ribbon" id="preview-button" onclick="switchToPreview()">Preview</button>
+    <div>
+        <button class="tab active" id="edit-button" onclick="switchToEdit()">Edit</button>
+        <button class="tab" id="preview-button" onclick="switchToPreview()">Preview</button>
     </div>
     <div id="editor-tab">
         <div id="editor"></div>

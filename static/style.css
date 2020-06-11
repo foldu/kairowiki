@@ -51,15 +51,16 @@ button:hover {
     background: lightgray;
 }
 
-button.ribbon {
-    border-top: none;
-    border-left: none;
-    border-right: none;
-    border-bottom: none;
+button.tab {
+    border: none;
 }
 
-button.ribbon.active {
+button.tab.active {
     border-bottom: 2px solid;
+}
+
+button.tab:focus {
+    outline: 0;
 }
 
 body {
@@ -110,12 +111,12 @@ pre {
 
 .vertical-form-list > li {
     display: flex;
-    font-size: 1em;
-    justify-content: space-between;
+    flex-direction: column;
+    margin: 0.5rem;
 }
 
-.vertical-form-list > li > * {
-    margin: 1rem;
+.vertical-form-list > li > input {
+    font-size: 1.2rem;
 }
 
 .flex-centered {
@@ -143,7 +144,6 @@ footer {
     display: flex;
     flex-direction: column;
     justify-content: center;
-    min-width: 32rem;
 }
 
 #editor {
