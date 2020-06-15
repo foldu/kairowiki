@@ -1,7 +1,7 @@
 use crate::{article::WikiArticle, data::Data, user_storage::UserId};
 
 #[derive(serde::Deserialize)]
-pub struct Request {
+pub struct PreviewMarkdown {
     markdown: String,
 }
 
@@ -13,7 +13,7 @@ pub struct EditSubmit {
 pub async fn preview(
     data: Data,
     _user_id: UserId,
-    request: Request,
+    request: PreviewMarkdown,
 ) -> Result<impl warp::Reply, warp::Rejection> {
     #[derive(serde::Serialize)]
     struct RenderedMarkdown {

@@ -31,11 +31,11 @@ impl ArticlePath {
 pub struct ArticleTitle(String);
 
 impl ArticleTitle {
-    pub fn from_path(root: impl AsRef<Path>, path: impl AsRef<Path>) -> Result<Self, TitleError> {
+    pub fn from_path(root: impl AsRef<Path>, path: impl AsRef<Path>) -> Result<Self, Error> {
         let path = path.as_ref();
         let root = root.as_ref();
         if path.extension() != Some(OsStr::new("md")) {
-            return Err(TitleError::InvalidExtension);
+            return Err(Error::InvalidExtension);
         }
 
         let path = path.strip_prefix(root).unwrap();
@@ -43,22 +43,13 @@ impl ArticleTitle {
         path.with_extension("")
             .into_os_string()
             .into_string()
-            .map_err(|_| TitleError::InvalidUTF8)
+            .map_err(|_| Error::InvalidUTF8)
             .map(Self)
     }
 
     pub fn new(s: String) -> Self {
         Self(s)
     }
-}
-
-#[derive(thiserror::Error, Debug)]
-pub enum TitleError {
-    #[error("Path is not a markdown file")]
-    InvalidExtension,
-
-    #[error("Path is not UTF-8")]
-    InvalidUTF8,
 }
 
 impl WikiArticle {
@@ -68,7 +59,31 @@ impl WikiArticle {
             title,
         }
     }
+
+    pub async fn read_to_string(&self) -> Result<String, Error> {
+        match tokio::fs::read_to_string(&self.path.as_ref()).await {
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => Err(Error::DoesNotExist),
+            other => other.map_err(Error::Io),
+        }
+    }
 }
+
+#[derive(thiserror::Error, Debug)]
+pub enum Error {
+    #[error("Article does not exist")]
+    DoesNotExist,
+
+    #[error("Can't read article: {0}")]
+    Io(std::io::Error),
+
+    #[error("Path is not a markdown file")]
+    InvalidExtension,
+
+    #[error("Path is not UTF-8")]
+    InvalidUTF8,
+}
+
+impl warp::reject::Reject for Error {}
 
 pub fn wiki_article(
     data: crate::data::Data,

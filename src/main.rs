@@ -157,15 +157,15 @@ async fn run() -> Result<(), anyhow::Error> {
     });
 
     let cors = warp::cors()
-        .allow_methods(vec!["GET", "PUT", "POST"])
+        .allow_methods(vec!["GET", "PUT", "POST", "HEAD"])
         .allow_credentials(true)
         .allow_origin(domain.as_str())
         .allow_origin("https://cdnjs.cloudflare.com")
         .build();
 
     let csp = csp::Builder::new()
-        .host_source(domain.as_str())
-        .host_source("https://cdnjs.cloudflare.com")
+        .script_sources(vec![domain.as_str(), "https://cdnjs.cloudflare.com"])
+        .worker_source("data:")
         .build();
 
     let routes = routes

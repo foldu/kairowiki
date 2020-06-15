@@ -11,8 +11,8 @@ use syntect::{
     parsing::{Scope, SyntaxSet},
 };
 
-struct ParserWrap<'a> {
-    it: pulldown_cmark::Parser<'a>,
+struct ParserWrap<'a, It> {
+    it: It,
     extra: VecDeque<Event<'a>>,
     renderer: &'a MarkdownRenderer,
 }
@@ -83,8 +83,15 @@ impl MarkdownRenderer {
 
     pub fn render(&self, markdown: &str) -> String {
         let mut rendered = String::new();
+        let parser =
+            pulldown_cmark::Parser::new_ext(markdown, Options::all()).filter_map(
+                |node| match node {
+                    Event::Html(_) => None,
+                    other => Some(other),
+                },
+            );
         let parser = ParserWrap {
-            it: pulldown_cmark::Parser::new_ext(markdown, Options::all()),
+            it: parser,
             extra: VecDeque::new(),
             renderer: self,
         };
@@ -114,7 +121,10 @@ impl MarkdownRenderer {
     }
 }
 
-impl<'a> Iterator for ParserWrap<'a> {
+impl<'a, It> Iterator for ParserWrap<'a, It>
+where
+    It: Iterator<Item = Event<'a>>,
+{
     type Item = Event<'a>;
 
     fn next(&mut self) -> Option<Self::Item> {

@@ -17,7 +17,7 @@ window.MonacoEnvironment = {
 
 require(["vs/editor/editor.main"], function () {
     window.editor = monaco.editor.create(document.querySelector("#editor"), {
-        value: document.querySelector("#markdown").innerHTML,
+        value: document.querySelector("#markdown").innerText,
         language: "markdown",
         minimap: {
             enabled: false,
@@ -81,22 +81,28 @@ function switchTo(elt) {
     return wasActive;
 }
 
-const tabs = [
-    [document.querySelector("#edit-button"), document.querySelector("#editor-tab")],
-    [document.querySelector("#preview-button"), document.querySelector("#preview-tab")],
-];
+const tabs = new Map([
+    [
+        document.querySelector("#edit-button"),
+        document.querySelector("#editor-tab"),
+    ],
+    [
+        document.querySelector("#preview-button"),
+        document.querySelector("#preview-tab"),
+    ],
+]);
 
-function switchTo(targetTab) {
+function switchTo(targetButton) {
+    const targetTab = tabs.get(targetButton);
     if (!targetTab.classList.contains("hidden")) {
         return false;
     }
+    targetButton.classList.add("active");
 
     targetTab.classList.remove("hidden");
 
     for (const [button, tab] of tabs) {
-        if (tab === targetTab) {
-            button.classList.add("active");
-        } else {
+        if (tab !== targetTab) {
             button.classList.remove("active");
             tab.classList.add("hidden");
         }
@@ -105,29 +111,31 @@ function switchTo(targetTab) {
     return true;
 }
 
-function switchToEdit() {
-    switchTo(document.querySelector("#editor-tab"));
-}
+document.querySelector("#edit-button").addEventListener("click", (evt) => {
+    switchTo(evt.target);
+});
 
-async function switchToPreview() {
-    const needsRender = switchTo(document.querySelector("#preview-tab"));
-    if (needsRender) {
-        const article = document.querySelector("#preview-tab > article");
-        article.innerHTML = "Rendering preview";
-        const response = await fetch("/api/preview", {
-            method: "POST",
-            credentials: "same-origin",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                markdown: editor.getValue(),
-            }),
-        });
+document
+    .querySelector("#preview-button")
+    .addEventListener("click", async (evt) => {
+        const needsRender = switchTo(evt.target);
+        if (needsRender) {
+            const article = document.querySelector("#preview-tab > article");
+            article.innerHTML = "Rendering preview";
+            const response = await fetch("/api/preview", {
+                method: "POST",
+                credentials: "same-origin",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    markdown: window.editor.getValue(),
+                }),
+            });
 
-        if (response.status === 200) {
-            const json = await response.json();
-            article.innerHTML = json.rendered;
+            if (response.status === 200) {
+                const json = await response.json();
+                article.innerHTML = json.rendered;
+            }
         }
-    }
-}
+    });

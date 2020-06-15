@@ -1,4 +1,4 @@
-use crate::{article::WikiArticle, data::Data, error::Error, templates, user_storage::UserId};
+use crate::{article::WikiArticle, data::Data, templates, user_storage::UserId};
 use warp::{
     reject::{self, Rejection},
     Reply,
@@ -6,13 +6,13 @@ use warp::{
 
 pub async fn show_entry(data: Data, article: WikiArticle) -> Result<impl Reply, Rejection> {
     // TODO: add rendering cache
-    let body = match tokio::fs::read_to_string(article.path.as_ref()).await {
+    let body = match article.read_to_string().await {
         Ok(cont) => tokio::task::block_in_place(|| data.markdown_renderer.render(&cont)),
-        Err(e) if e.kind() == std::io::ErrorKind::NotFound => format!(
+        Err(crate::article::Error::DoesNotExist) => format!(
             "Article with title {} not found, click on edit to create it",
             article.title.as_ref()
         ),
-        Err(e) => return Err(reject::custom(Error::Io(e))),
+        Err(e) => return Err(reject::custom(e)),
     };
 
     Ok(render!(templates::WikiPage {
