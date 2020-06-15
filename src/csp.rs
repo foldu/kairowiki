@@ -1,4 +1,4 @@
-use warp::http::{HeaderMap, HeaderValue};
+#![allow(unused)]
 
 #[derive(Default)]
 pub struct Builder<'a> {

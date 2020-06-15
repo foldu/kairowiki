@@ -25,7 +25,7 @@ pub async fn show_entry(data: Data, article: WikiArticle) -> Result<impl Reply, 
 pub async fn edit(
     data: Data,
     article: WikiArticle,
-    user_id: UserId,
+    _user_id: UserId,
 ) -> Result<impl Reply, Rejection> {
     let markdown = tokio::fs::read_to_string(article.path.as_ref())
         .await

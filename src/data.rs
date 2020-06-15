@@ -6,6 +6,7 @@ use crate::{
 use anyhow::Context;
 use git2::Repository;
 use std::{
+    net::{IpAddr, Ipv4Addr},
     path::{Path, PathBuf},
     sync::Arc,
 };
@@ -134,6 +135,9 @@ pub struct Config {
     pub syntax_theme_name: String,
 
     pub domain: Option<url::Url>,
+
+    #[serde(default = "default_ip_addr")]
+    pub ip_addr: IpAddr,
 }
 
 fn tru() -> bool {
@@ -178,4 +182,8 @@ fn default_storage_path() -> String {
 
 fn default_theme_name() -> String {
     "InspiredGitHub".to_owned()
+}
+
+fn default_ip_addr() -> IpAddr {
+    IpAddr::V4(Ipv4Addr::UNSPECIFIED)
 }

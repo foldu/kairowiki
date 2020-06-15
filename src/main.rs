@@ -4,7 +4,6 @@ mod macros;
 mod article;
 mod csp;
 mod data;
-mod error;
 mod file_storage;
 mod forms;
 mod git;
@@ -179,8 +178,8 @@ async fn run() -> Result<(), anyhow::Error> {
         stream::select(term, int).next().await;
     };
 
-    let (addr, server) =
-        warp::serve(routes).bind_with_graceful_shutdown(([0, 0, 0, 0], data.config.port), shutdown);
+    let addr = std::net::SocketAddr::new(data.config.ip_addr, data.config.port);
+    let (_, server) = warp::serve(routes).bind_with_graceful_shutdown(addr, shutdown);
 
     tracing::info!("Listening on http://{}", addr);
 
@@ -210,7 +209,13 @@ fn main() {
         .unwrap();
 
     if let Err(e) = rt.block_on(run()) {
-        eprintln!("{}", e);
+        let mut chain = e.chain();
+        if let Some(head) = chain.next() {
+            eprintln!("{}", head);
+        }
+        for cause in chain {
+            eprintln!("Caused by: {}", cause);
+        }
         std::process::exit(1);
     }
 }

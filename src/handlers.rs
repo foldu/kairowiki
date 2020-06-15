@@ -4,7 +4,7 @@ pub mod file_storage;
 pub mod search;
 pub mod wiki;
 
-use crate::{error::Error, relative_url::RelativeUrl, templates};
+use crate::{relative_url::RelativeUrl, templates};
 use warp::{http::StatusCode, Rejection};
 
 pub fn unimplemented() -> Result<impl warp::Reply, Rejection> {
@@ -31,13 +31,6 @@ pub async fn handle_rejection(
 
     Ok(if err.is_not_found() {
         template_response!(StatusCode::NOT_FOUND, templates::Error::not_found())
-    } else if let Some(error) = err.find::<Error>() {
-        match error {
-            Error::Io(_) => template_response!(
-                StatusCode::INTERNAL_SERVER_ERROR,
-                templates::Error::internal_server()
-            ),
-        }
     } else if let Some(error) = err.find::<crate::session::Error>() {
         response = response.status(StatusCode::PERMANENT_REDIRECT);
         match error {
