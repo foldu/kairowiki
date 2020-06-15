@@ -51,12 +51,27 @@ pub async fn handle_rejection(
                     .unwrap()
             }
         }
-    } else {
-        // FIXME: should use display
-        tracing::error!("{:?}", err);
+    } else if let Some(_) = err.find::<crate::git::Error>() {
         template_response!(
             StatusCode::INTERNAL_SERVER_ERROR,
             templates::Error::internal_server()
         )
+    } else if let Some(_) = err.find::<crate::user_storage::Error>() {
+        template_response!(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            templates::Error::internal_server()
+        )
+    } else if let Some(crate::file_storage::Error::Sqlx(err)) =
+        err.find::<crate::file_storage::Error>()
+    {
+        tracing::error!("Database error: {}", err);
+        template_response!(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            templates::Error::internal_server()
+        )
+    } else {
+        // FIXME: should use display
+        tracing::error!("{:?}", err);
+        template_response!(StatusCode::NOT_FOUND, templates::Error::not_found())
     })
 }

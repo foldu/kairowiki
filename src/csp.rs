@@ -7,10 +7,10 @@ pub struct Builder<'a> {
     worker_sources: Vec<&'a str>,
 }
 
-fn create_directives(directives: &[(Vec<&str>, &str)]) -> String {
+fn create_directives(directives: &[(&str, &[&str])]) -> String {
     directives
         .into_iter()
-        .filter_map(|(sources, name)| {
+        .filter_map(|(name, sources)| {
             if sources.is_empty() {
                 None
             } else {
@@ -50,9 +50,9 @@ impl<'a> Builder<'a> {
         warp::reply::with::header(
             "Content-Security-Policy",
             create_directives(&[
-                (self.script_sources, "script-src"),
-                (self.style_sources, "style-src"),
-                (self.worker_sources, "worker-src"),
+                ("script-src", &self.script_sources),
+                ("style-src", &self.style_sources),
+                ("worker-src", &self.worker_sources),
             ]),
         )
     }
