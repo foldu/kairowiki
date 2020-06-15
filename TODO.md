@@ -4,11 +4,11 @@
 - [ ] write readme
 - [x] badge link to build status and dockerhub
 - [ ] fix css
-- [?] make editing articles work
+- [ ] make editing articles suck less
 - [ ] LDAP user storage
 - [x] make logo
 - [x] graceful shutdown
 - [x] do proper migrations
 - [x] loglevel environment variable
 - [x] isolate rendered markdown (csp should be ok enough?)
-- [ ] get monaco web worker to work
+- [x] get monaco web worker to work

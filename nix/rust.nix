@@ -5,13 +5,10 @@ let
   };
   channel =
     pkgs.rustChannelOf {
-      date = "2020-05-10";
+      date = "2020-06-07";
       channel = "nightly";
     };
   rust = channel.rust;
-  #channel.rust.override {
-  #  extensions = [ "clippy-preview" "rustfmt-preview" "rust-src" ];
-  #};
 in
 {
   naersk = pkgs.callPackage sources.naersk {

@@ -8,36 +8,41 @@ license = "Unlicense OR MIT"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-warp = "0.2.3"
-tokio = { version = "0.2.21", features = ["rt-threaded", "sync", "signal"] }
-snafu = "0.6.8"
-git2 = "0.13.6"
-envy = "0.4.1"
-serde = { version = "1.0.110", features = ["derive"] }
-tracing = "0.1.14"
-tracing-futures = "0.2.4"
-sqlx = { rev = "086dfec00288594359a07fb87f6b9536959542a2", git = "https://github.com/launchbadge/sqlx", default-features = false, features = ["sqlite", "runtime-tokio", "macros", "offline"] }
-derive_more = "0.99.7"
-rust-argon2 = "0.8.2"
 anyhow = "1.0.31"
-pulldown-cmark = { version = "0.7.1", default-features = false, features = ["simd"] }
 askama = "0.9.0"
-thiserror = "1.0.19"
-tracing-subscriber = "0.2.5"
-rand = "0.7.3"
-async-trait = "0.1.31"
-cookie = "0.14.0"
-uuid = { version = "0.8.1", features = ["v4"] }
-time = "0.2.16"
-urlencoding = "1.0.0"
-regex = "1.3.9"
-futures-util = "0.3.5"
-tree_magic = "0.2.3"
-mime = "0.3.16"
+async-trait = "0.1.35"
 blake3 = "0.3.4"
-smallvec = "1.4.0"
 bstr = "0.2.13"
 bytes = "0.5.4"
-syntect = { version = "4.2.0", features = ["html"] }
+cookie = "0.14.1"
+derive_more = "0.99.7"
+envy = "0.4.1"
+futures-util = "0.3.5"
+git2 = "0.13.6"
+mime = "0.3.16"
 once_cell = "1.4.0"
+pulldown-cmark = { version = "0.7.1", default-features = false, features = ["simd"] }
+rand = "0.7.3"
+regex = "1.3.9"
+rust-argon2 = "0.8.2"
+serde = { version = "1.0.112", features = ["derive"] }
+smallvec = "1.4.0"
+snafu = "0.6.8"
+syntect = { version = "4.2.0", features = ["html"] }
+thiserror = "1.0.19"
+time = "0.2.16"
+tokio = { version = "0.2.21", features = ["rt-threaded", "sync", "signal"] }
+tracing = "0.1.15"
+tracing-futures = "0.2.4"
+tracing-subscriber = "0.2.5"
+tree_magic = "0.2.3"
 url = { version = "2.1.1", features = ["serde"] }
+urlencoding = "1.0.0"
+uuid = { version = "0.8.1", features = ["v4"] }
+warp = "0.2.3"
+
+[dependencies.sqlx]
+git = "https://github.com/launchbadge/sqlx"
+rev = "086dfec00288594359a07fb87f6b9536959542a2"
+default-features = false
+features = ["sqlite", "runtime-tokio", "macros", "offline"]
