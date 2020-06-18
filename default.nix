@@ -26,7 +26,7 @@ naersk.buildPackage {
   ];
   postInstall = ''
     # FIXME: should copy into more UNIXy path like /usr/lib/kairowiki
-    mkdir -p "$out/static"
-    cp -r ${src}/static "$out"
+    mkdir -p "$out/usr/lib/kairowiki"
+    cp -r ${src}/static "$out/usr/lib/kairowiki"
   '';
 }

@@ -155,7 +155,7 @@ fn default_port() -> u16 {
 }
 
 fn default_static_dir() -> PathBuf {
-    PathBuf::from("/static")
+    PathBuf::from("/usr/lib/kairowiki/static")
 }
 
 fn default_wiki_name() -> String {
