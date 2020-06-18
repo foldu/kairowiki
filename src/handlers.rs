@@ -14,6 +14,7 @@ pub fn unimplemented() -> Result<impl warp::Reply, Rejection> {
     ))
 }
 
+#[allow(clippy::redundant_pattern_matching)]
 pub async fn handle_rejection(
     err: Rejection,
 ) -> Result<impl warp::Reply, std::convert::Infallible> {

@@ -35,7 +35,7 @@ impl<'a> Builder<'a> {
                 encode_into(k.as_bytes(), &mut path).unwrap();
                 path.push(b'=');
                 encode_into(v.as_bytes(), &mut path).unwrap();
-                if let Some(_) = iter.peek() {
+                if iter.peek().is_some() {
                     path.push(b'&');
                 }
             }
@@ -80,7 +80,7 @@ impl<'a> RelativeUrl<'a> {
                     b"" => (),
                     elt => {
                         encode_into(elt, &mut ret).unwrap();
-                        if let Some(_) = iter.peek() {
+                        if iter.peek().is_some() {
                             ret.push(b'/');
                         }
                     }
@@ -120,9 +120,9 @@ impl<'a> AsRef<str> for RelativeUrl<'a> {
 fn encode_into<W: IOWrite>(data: &[u8], mut escaped: W) -> Result<(), std::io::Error> {
     for byte in data.iter() {
         if !byte_needs_escaping(*byte) {
-            escaped.write(std::slice::from_ref(byte))?;
+            escaped.write_all(std::slice::from_ref(byte))?;
         } else {
-            escaped.write(&[b'%', to_hex_digit(*byte >> 4), to_hex_digit(*byte & 15)])?;
+            escaped.write_all(&[b'%', to_hex_digit(*byte >> 4), to_hex_digit(*byte & 15)])?;
         }
     }
     Ok(())
@@ -173,4 +173,3 @@ mod test {
         );
     }
 }
-

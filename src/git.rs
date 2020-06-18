@@ -60,7 +60,7 @@ impl Repo {
         })
     }
 
-    pub async fn write<'a>(&'a self) -> write::RepoLock<'a> {
+    pub async fn write(&self) -> write::RepoLock<'_> {
         write::RepoLock {
             path: &self.path,
             repo: self.repo.lock().await,
@@ -68,7 +68,7 @@ impl Repo {
     }
 }
 
-fn repo_head<'a>(repo: &'a Repository) -> Result<Option<git2::Reference<'a>>, git2::Error> {
+fn repo_head(repo: &Repository) -> Result<Option<git2::Reference<'_>>, git2::Error> {
     match repo.head() {
         Ok(head) => Ok(Some(head)),
         Err(e) if e.code() == git2::ErrorCode::UnbornBranch => Ok(None),

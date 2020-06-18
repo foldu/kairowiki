@@ -15,7 +15,7 @@ impl Sessions {
         let weakling = Arc::downgrade(&ret.0);
         tokio::task::spawn(async move {
             let mut interval = tokio::time::interval(gc_time);
-            while let Some(_) = interval.next().await {
+            while interval.next().await.is_some() {
                 if let Some(this) = weakling.upgrade() {
                     let mut storage = this.write().await;
                     storage.gc();

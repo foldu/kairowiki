@@ -9,7 +9,7 @@ pub struct Builder<'a> {
 
 fn create_directives(directives: &[(&str, &[&str])]) -> String {
     directives
-        .into_iter()
+        .iter()
         .filter_map(|(name, sources)| {
             if sources.is_empty() {
                 None

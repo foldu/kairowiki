@@ -41,7 +41,7 @@ impl ReadOnly<'_> {
             let oid = oid?;
             if let Ok(commit) = self.repo.find_commit(oid) {
                 let tree = commit.tree()?;
-                if let Some(_) = super::get_blob_oid(&tree, tree_path)? {
+                if super::get_blob_oid(&tree, tree_path)?.is_some() {
                     let signature = commit.author();
                     ret.push(HistoryEntry {
                         user: UserAccount {
@@ -49,10 +49,7 @@ impl ReadOnly<'_> {
                             email: try_to_string(signature.email()),
                         },
                         date: time::OffsetDateTime::from_unix_timestamp(commit.time().seconds()),
-                        summary: commit
-                            .summary()
-                            .map(ToOwned::to_owned)
-                            .unwrap_or_else(|| String::new()),
+                        summary: try_to_string(commit.summary()),
                     });
                 }
             }
@@ -78,7 +75,7 @@ impl ReadOnly<'_> {
 //}
 
 fn try_to_string(opt: Option<&str>) -> String {
-    opt.map(ToOwned::to_owned).unwrap_or_else(|| String::new())
+    opt.map(ToOwned::to_owned).unwrap_or_else(String::new)
 }
 
 pub struct HistoryEntry {
