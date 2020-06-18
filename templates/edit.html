@@ -2,25 +2,25 @@
 
 {% block content %}
 <main id="edit">
-    <div>
-        <button class="tab active" id="edit-button">Edit</button>
-        <button class="tab" id="preview-button">Preview</button>
+  <div>
+    <button class="tab active" id="edit-button">Edit</button>
+    <button class="tab" id="preview-button">Preview</button>
+  </div>
+  <div id="editor-tab">
+    <div id="editor"></div>
+    <div id="file-upload">
+      <ul id="file-list">
+        <input type="file" class="file-input">
+        <div class="file-link"></div>
+        </li>
+      </ul>
     </div>
-    <div id="editor-tab">
-        <div id="editor"></div>
-        <div id="file-upload">
-            <ul id="file-list">
-                <input type="file" class="file-input">
-                <div class="file-link"></div>
-                </li>
-            </ul>
-        </div>
-        <button id="save-button" type="submit">Save</button>
-    </div>
-    <div id="preview-tab" class="hidden text-content">
-        <article class="rendered-markdown">
-        </article>
-    </div>
+    <button id="save-button" type="submit">Save</button>
+  </div>
+  <div id="preview-tab" class="hidden text-content">
+    <article class="rendered-markdown">
+    </article>
+  </div>
 </main>
 {% endblock %}
 

@@ -3,15 +3,15 @@
 
 {% block content %}
 <main id="wiki-article" class="text-content">
-    <div id="wiki-article-head">
-        <h1 class="wiki-article-title">{{ title }}</h1>
-        <div class="buttons">
-            <a href="/edit/{{ title }}"><button>Edit</button></a>
-            <a href="/history/{{ title }}"><button>History</button></a>
-        </div>
+  <div id="wiki-article-head">
+    <h1 class="wiki-article-title">{{ title }}</h1>
+    <div class="buttons">
+      <a href="/edit/{{ title }}"><button>Edit</button></a>
+      <a href="/history/{{ title }}"><button>History</button></a>
     </div>
-    <article class="rendered-markdown">
-        {{ content|safe }}
-    </article>
+  </div>
+  <article class="rendered-markdown">
+    {{ content|safe }}
+  </article>
 </main>
 {% endblock %}

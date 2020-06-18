@@ -4,27 +4,27 @@
 <!--- action intentionally left out  --->
 <main class="flex-centered">
 
-    {% match error %}
-        {% when Some with (error) %}
-            {{ error }}
-        {% when None %}
-    {% endmatch %}
-    <form method="POST">
-        <ul class="vertical-form-list">
-            <li>
-                <label for="name">Name</label>
-                <input type="text" id="name" name="name" required autofocus>
-            </li>
-            <li>
-                <label for="password">Password</label>
-                <input type="password" id="password" name="password" required>
-            </li>
-            <li>
-                <button type="submit">Login</button>
-            </li>
-    </form>
-    {% if registration_enabled %}
-        Not registered yet? Click here to <a href="/register">Register</a>
-    {% endif %}
+  {% match error %}
+    {% when Some with (error) %}
+      {{ error }}
+    {% when None %}
+  {% endmatch %}
+  <form method="POST">
+    <ul class="vertical-form-list">
+      <li>
+        <label for="name">Name</label>
+        <input type="text" id="name" name="name" required autofocus>
+      </li>
+      <li>
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" required>
+      </li>
+      <li>
+        <button type="submit">Login</button>
+      </li>
+  </form>
+  {% if registration_enabled %}
+    Not registered yet? Click here to <a href="/register">Register</a>
+  {% endif %}
 </main>
 {% endblock %}

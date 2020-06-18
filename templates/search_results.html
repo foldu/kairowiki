@@ -2,16 +2,16 @@
 
 {% block content %}
 <main id="search-results" class="flex-centered">
-    {% if results.len() == 0 %}
-        No article matching <a href="/edit/{{ query }}">{{ query }}</a> found, click on the link to create it.
-    {% else %}
-        <ul>
-        {% for article in results %}
-        <li>
-            <a href="/wiki/{{ article }}">{{ article }}</a>
-        </li>
-        {% endfor %}
-        </ul>
-    {% endif %}
+  {% if results.len() == 0 %}
+    No article matching <a href="/edit/{{ query }}">{{ query }}</a> found, click on the link to create it.
+  {% else %}
+    <ul>
+    {% for article in results %}
+    <li>
+      <a href="/wiki/{{ article }}">{{ article }}</a>
+    </li>
+    {% endfor %}
+    </ul>
+  {% endif %}
 </main>
 {% endblock %}

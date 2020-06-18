@@ -2,33 +2,33 @@
 
 {% block content %}
 <form action="/register" method="POST" class="flex-centered">
-    {% match error %}
-        {% when Some with (error) %}
-            {{ error }}
-        {% when None %}
-    {% endmatch %}
-    <ul class="vertical-form-list">
-        <li>
-            <label for="name">Name</label>
-            <input type="text" id="name" name="name" required autofocus>
-        </li>
-        <li>
-            <label for="email">Email</label>
-            <input type="text" id="email" name="email" required>
-        </li>
-        <li>
-            <label for="password">Password</label>
-            <input type="password" id="password" name="password" required>
-        </li>
-        <li>
-            <label for="password-check">Repeat Password</label>
-            <input type="password" id="password-check" required>
-        </li>
-        <li>
-            <button id="submit" type="submit">Register</button>
-        </li>
+  {% match error %}
+    {% when Some with (error) %}
+      {{ error }}
+    {% when None %}
+  {% endmatch %}
+  <ul class="vertical-form-list">
+    <li>
+      <label for="name">Name</label>
+      <input type="text" id="name" name="name" required autofocus>
+    </li>
+    <li>
+      <label for="email">Email</label>
+      <input type="text" id="email" name="email" required>
+    </li>
+    <li>
+      <label for="password">Password</label>
+      <input type="password" id="password" name="password" required>
+    </li>
+    <li>
+      <label for="password-check">Repeat Password</label>
+      <input type="password" id="password-check" required>
+    </li>
+    <li>
+      <button id="submit" type="submit">Register</button>
+    </li>
 </form>
 <script>
-    // TODO: check password repeat
+  // TODO: check password repeat
 </script>
 {% endblock %}
