@@ -31,11 +31,9 @@ pub async fn edit(
 }
 
 pub async fn history(data: Data, article: WikiArticle) -> Result<impl Reply, Rejection> {
-    let history = data
-        .repo
-        .read()
-        .and_then(|repo| repo.history(&article))
-        .map_err(warp::reject::custom)?;
+    let history =
+        tokio::task::block_in_place(|| data.repo.read().and_then(|repo| repo.history(&article)))
+            .map_err(warp::reject::custom)?;
 
     Ok(render!(templates::History {
         wiki: data.wiki(),
