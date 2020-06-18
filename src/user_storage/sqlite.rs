@@ -1,17 +1,4 @@
 use crate::migrations::{Migration, MigrationInfo, NeedsMigration};
-use std::path::PathBuf;
-
-#[derive(snafu::Snafu, Debug)]
-pub enum ConnectionError {
-    #[snafu(display("Can't create parent directory for sqlite database in {}: {}", parent.display(), source))]
-    CreateParent {
-        parent: PathBuf,
-        source: std::io::Error,
-    },
-
-    #[snafu(display("Can't open sqlite database {}: {}", path, source))]
-    Connect { path: String, source: sqlx::Error },
-}
 
 impl From<sqlx::Error> for super::Error {
     fn from(other: sqlx::Error) -> super::Error {
@@ -30,8 +17,8 @@ impl From<sqlx::Error> for super::Error {
 pub struct SqliteStorage(sqlx::SqlitePool);
 
 impl SqliteStorage {
-    pub async fn new(pool: sqlx::SqlitePool) -> Result<NeedsMigration<Self>, ConnectionError> {
-        Ok(NeedsMigration::new(Self(pool)))
+    pub fn new(pool: sqlx::SqlitePool) -> NeedsMigration<Self> {
+        NeedsMigration::new(Self(pool))
     }
 }
 

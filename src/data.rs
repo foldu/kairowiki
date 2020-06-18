@@ -2,7 +2,7 @@ use crate::{
     file_storage::{self, FileStorage},
     git::Repo,
     markdown::MarkdownRenderer,
-    user_storage::SqliteStorage,
+    user_storage,
 };
 use std::{
     net::{IpAddr, Ipv4Addr},
@@ -22,26 +22,24 @@ impl Data {
         let pool = crate::sqlite::open(&cfg.db_file, cfg.db_pool_size).await?;
         let migrations = crate::migrations::Migrations::new(pool.clone()).await?;
         let user_storage = migrations
-            .run(SqliteStorage::new(pool.clone()).await?)
+            .run(user_storage::SqliteStorage::new(pool.clone()))
             .await?;
-        let file_storage = migrations
-            .run(
-                FileStorage::new(
-                    pool.clone(),
-                    file_storage::Config {
-                        storage_path: cfg.storage_path.clone(),
-                        allowed_mime_types: vec![
-                            mime::IMAGE_JPEG,
-                            mime::IMAGE_PNG,
-                            mime::IMAGE_GIF,
-                            mime::IMAGE_SVG,
-                        ],
-                        route: "/storage".to_owned(),
-                    },
-                )
-                .await?,
-            )
-            .await?;
+
+        let file_storage = FileStorage::new(
+            pool.clone(),
+            file_storage::Config {
+                storage_path: cfg.storage_path.clone(),
+                allowed_mime_types: vec![
+                    mime::IMAGE_JPEG,
+                    mime::IMAGE_PNG,
+                    mime::IMAGE_GIF,
+                    mime::IMAGE_SVG,
+                ],
+                route: "/storage".to_owned(),
+            },
+        )
+        .await?;
+        let file_storage = migrations.run(file_storage).await?;
 
         let theme_path = cfg.static_dir.join("hl.css");
         Ok(Self(Arc::new(DataInner {
