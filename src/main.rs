@@ -1,6 +1,7 @@
 #![feature(or_patterns)]
 #[macro_use]
 mod macros;
+mod api;
 mod article;
 mod csp;
 mod data;
@@ -115,22 +116,29 @@ async fn run() -> Result<(), anyhow::Error> {
         .and(warp::get())
         .and(warp::fs::dir(data.config.storage_path.clone()));
 
-    let api = warp::path("api").and(warp::body::content_length_limit(2 * (1 << 20)));
-    let preview = api
+    let api = warp::path("api");
+    let put_api = api
+        .and(warp::body::content_length_limit(2 * (1 << 20)))
+        .and(warp::put());
+    let preview = put_api
         .and(warp::path!("preview"))
         .and(data_filter.clone())
-        .and(warp::post())
         .and(login_required.clone())
         .and(warp::body::json())
         .and_then(handlers::api::preview);
-    let edit_submit = api
+    let edit_submit = put_api
         .and(warp::path("edit"))
         .and(data_filter.clone())
         .and(wiki_article.clone())
         .and(login_required.clone())
-        .and(warp::put())
         .and(warp::body::json())
         .and_then(handlers::api::edit_submit);
+    let article_info = api
+        .and(warp::path("article_info"))
+        .and(data_filter.clone())
+        .and(wiki_article.clone())
+        .and(warp::get())
+        .and_then(handlers::api::article_info);
 
     let routes = routes! {
         home,
@@ -148,7 +156,8 @@ async fn run() -> Result<(), anyhow::Error> {
         upload,
         serve_files,
         preview,
-        edit_submit
+        edit_submit,
+        article_info
     };
 
     let domain = data.config.domain.as_ref().cloned().unwrap_or_else(|| {

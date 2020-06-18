@@ -1,29 +1,84 @@
-require.config({
-    paths: {
-        vs:
-            "https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.19.2/min/vs",
-    },
-});
+(async () => {
+    require.config({
+        paths: {
+            vs:
+                "https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.19.2/min/vs",
+        },
+    });
 
-window.MonacoEnvironment = {
-    getWorkerUrl: function (workerId, label) {
-        return `data:text/javascript;charset=utf-8,${encodeURIComponent(`
+    window.MonacoEnvironment = {
+        getWorkerUrl: function (workerId, label) {
+            return `data:text/javascript;charset=utf-8,${encodeURIComponent(`
           self.MonacoEnvironment = {
             baseUrl: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.19.2/min/'
           };
           importScripts('https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.19.2/min/vs/base/worker/workerMain.js');`)}`;
-    },
-};
-
-require(["vs/editor/editor.main"], function () {
-    window.editor = monaco.editor.create(document.querySelector("#editor"), {
-        value: document.querySelector("#markdown").innerText,
-        language: "markdown",
-        minimap: {
-            enabled: false,
         },
+    };
+
+    const title = stripPrefix(window.location.pathname, "/edit/");
+    let response = await fetch("/api/article_info/" + title, {
+        method: "GET",
     });
-});
+
+    // TODO: show error
+    if (response.status !== 200) return;
+
+    const article_info = await response.json();
+    initMonaco(article_info.markdown);
+
+    document
+        .querySelector("#save-button")
+        .addEventListener("click", async () => {
+            const response = await fetch("/api/edit/" + title, {
+                method: "PUT",
+                credentials: "same-origin",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    markdown: window.editor.getValue(),
+                    oid: article_info.oid,
+                }),
+            });
+
+            // TODO: handle diff if somebody else commited before
+            console.log(response);
+            if (response.status === 200) {
+                const body = await response.json();
+                console.log(body);
+                switch (body.type) {
+                    case "ok":
+                        window.location = "/wiki/" + title;
+                        break;
+                    case "diff":
+                        console.error("Got diff");
+                        break;
+                }
+            } else {
+                console.error(response);
+            }
+        });
+})();
+
+function stripPrefix(s, prefix) {
+    return s.indexOf(prefix) === 0 ? s.slice(prefix.length) : s;
+}
+
+function initMonaco(text) {
+    require(["vs/editor/editor.main"], function () {
+        window.editor = monaco.editor.create(
+            document.querySelector("#editor"),
+            {
+                value: text,
+                language: "markdown",
+                minimap: {
+                    enabled: false,
+                },
+            }
+        );
+    });
+}
 
 (() => {
     const fileInput = document.querySelector(".file-input");
@@ -47,28 +102,6 @@ require(["vs/editor/editor.main"], function () {
         ).innerHTML = `<a href=${body.url}>${body.url}</a>`;
     });
 })();
-
-document.querySelector("#save-button").addEventListener("click", async () => {
-    const title = document.querySelector("#title").innerHTML;
-    const encodedTitle = encodeURI(title);
-    const response = await fetch("/api/edit/" + encodedTitle, {
-        method: "PUT",
-        credentials: "same-origin",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-            markdown: window.editor.getValue(),
-        }),
-    });
-
-    // TODO: handle diff if somebody else commited before
-    if (response.status === 200) {
-        window.location = "/wiki/" + encodedTitle;
-    } else {
-        console.error(response);
-    }
-});
 
 function switchTo(elt) {
     const classList = elt.classList;
@@ -123,7 +156,7 @@ document
             const article = document.querySelector("#preview-tab > article");
             article.innerHTML = "Rendering preview";
             const response = await fetch("/api/preview", {
-                method: "POST",
+                method: "PUT",
                 credentials: "same-origin",
                 headers: {
                     "Content-Type": "application/json",

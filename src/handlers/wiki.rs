@@ -24,18 +24,10 @@ pub async fn show_entry(data: Data, article: WikiArticle) -> Result<impl Reply, 
 
 pub async fn edit(
     data: Data,
-    article: WikiArticle,
+    _article: WikiArticle,
     _user_id: UserId,
 ) -> Result<impl Reply, Rejection> {
-    let markdown = tokio::fs::read_to_string(article.path.as_ref())
-        .await
-        .unwrap_or_else(|_| String::new());
-
-    Ok(render!(templates::WikiEdit {
-        title: &article.title,
-        wiki: data.wiki(),
-        markdown: &markdown,
-    }))
+    Ok(render!(templates::WikiEdit { wiki: data.wiki() }))
 }
 
 pub async fn history(data: Data, article: WikiArticle) -> Result<impl Reply, Rejection> {

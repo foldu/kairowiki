@@ -69,6 +69,9 @@ pub async fn handle_rejection(
             StatusCode::INTERNAL_SERVER_ERROR,
             templates::Error::internal_server()
         )
+    } else if let Some(_) = err.find::<warp::body::BodyDeserializeError>() {
+        tracing::error!("api misuse");
+        template_response!(StatusCode::BAD_REQUEST, templates::Error::invalid_request())
     } else {
         // FIXME: should use display
         tracing::error!("{:?}", err);

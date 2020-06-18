@@ -27,7 +27,7 @@ impl ArticlePath {
     }
 }
 
-#[derive(derive_more::AsRef, derive_more::Deref, derive_more::Display)]
+#[derive(derive_more::AsRef, derive_more::Deref, derive_more::Display, serde::Serialize)]
 pub struct ArticleTitle(String);
 
 impl ArticleTitle {

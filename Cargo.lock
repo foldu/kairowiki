@@ -823,6 +823,7 @@ dependencies = [
  "envy",
  "futures-util",
  "git2",
+ "hex",
  "mime 0.3.16",
  "once_cell",
  "pulldown-cmark",

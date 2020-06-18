@@ -1,12 +1,10 @@
-use crate::{article::ArticleTitle, data::Wiki};
+use crate::data::Wiki;
 use askama::Template;
 
 #[derive(Template)]
 #[template(path = "edit.html")]
 pub struct WikiEdit<'a> {
-    pub title: &'a ArticleTitle,
     pub wiki: Wiki<'a>,
-    pub markdown: &'a str,
 }
 
 #[derive(Template)]
@@ -96,6 +94,13 @@ impl<'a> Error<'a> {
         Self {
             code: 404,
             msg: "Not found",
+        }
+    }
+
+    pub fn invalid_request() -> Self {
+        Self {
+            code: 400,
+            msg: "Invalid request",
         }
     }
 

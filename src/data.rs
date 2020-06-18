@@ -1,10 +1,9 @@
 use crate::{
     file_storage::{self, FileStorage},
+    git::Repo,
     markdown::MarkdownRenderer,
     user_storage::SqliteStorage,
 };
-use anyhow::Context;
-use git2::Repository;
 use std::{
     net::{IpAddr, Ipv4Addr},
     path::{Path, PathBuf},
@@ -18,12 +17,7 @@ impl Data {
     pub async fn from_env() -> Result<Self, anyhow::Error> {
         let cfg: Config = envy::from_env()?;
         mkdir_p(&cfg.git_repo)?;
-        match Repository::open(&cfg.git_repo) {
-            Err(e) if e.code() == git2::ErrorCode::NotFound => {
-                Repository::init(&cfg.git_repo).context("Could not init git repo")?;
-            }
-            other => other.map(|_| ()).context("Could not open git repository")?,
-        };
+        let repo = Repo::open_or_init(cfg.git_repo.clone())?;
 
         let pool = crate::sqlite::open(&cfg.db_file, cfg.db_pool_size).await?;
         let migrations = crate::migrations::Migrations::new(pool.clone()).await?;
@@ -51,6 +45,7 @@ impl Data {
 
         let theme_path = cfg.static_dir.join("hl.css");
         Ok(Self(Arc::new(DataInner {
+            repo,
             user_storage: Box::new(user_storage),
             file_storage,
             markdown_renderer: MarkdownRenderer::new(&cfg.syntax_theme_name, theme_path)?,
@@ -91,6 +86,7 @@ pub struct DataInner {
     pub config: Config,
     pub file_storage: crate::file_storage::FileStorage,
     pub markdown_renderer: MarkdownRenderer,
+    pub repo: Repo,
 }
 
 pub struct Wiki<'a> {
