@@ -12,3 +12,4 @@
 - [x] loglevel environment variable
 - [x] isolate rendered markdown (csp should be ok enough?)
 - [x] get monaco web worker to work
+- [ ] json api errors for /api/*

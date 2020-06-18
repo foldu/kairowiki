@@ -16,6 +16,14 @@ pub struct WikiPage<'a> {
 }
 
 #[derive(Template)]
+#[template(path = "history.html")]
+pub struct History<'a> {
+    pub title: &'a str,
+    pub history: &'a [crate::git::HistoryEntry],
+    pub wiki: Wiki<'a>,
+}
+
+#[derive(Template)]
 #[template(path = "login.html")]
 pub struct Login<'a> {
     pub wiki: Wiki<'a>,

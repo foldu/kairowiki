@@ -31,5 +31,15 @@ pub async fn edit(
 }
 
 pub async fn history(data: Data, article: WikiArticle) -> Result<impl Reply, Rejection> {
-    super::unimplemented()
+    let history = data
+        .repo
+        .read()
+        .and_then(|repo| repo.history(&article))
+        .map_err(warp::reject::custom)?;
+
+    Ok(render!(templates::History {
+        wiki: data.wiki(),
+        title: article.title.as_ref(),
+        history: &history,
+    }))
 }

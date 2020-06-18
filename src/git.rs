@@ -1,6 +1,9 @@
+mod repo_path;
+
 use crate::{api, article::WikiArticle, handlers::api::EditSubmit, user_storage::UserAccount};
 use git2::{Repository, ResetType, Signature};
-use std::path::{Path, PathBuf};
+use repo_path::{RepoPath, TreePath};
+use std::path::PathBuf;
 use tokio::sync::{Mutex, MutexGuard};
 
 // FIXME: better error messages
@@ -14,7 +17,7 @@ pub enum Error {
 }
 
 pub struct Repo {
-    path: PathBuf,
+    path: RepoPath,
     repo: Mutex<Repository>,
 }
 
@@ -36,7 +39,7 @@ impl Repo {
                     })?;
 
                 Ok(Self {
-                    path,
+                    path: RepoPath::new(path),
                     repo: Mutex::new(repo),
                 })
             }
@@ -45,7 +48,7 @@ impl Repo {
     }
 
     pub fn read(&self) -> Result<ReadOnly, Error> {
-        let repo = Repository::open(&self.path)?;
+        let repo = self.path.open()?;
         Ok(ReadOnly {
             repo,
             repo_path: &self.path,
@@ -70,17 +73,41 @@ fn repo_head<'a>(repo: &'a Repository) -> Result<Option<git2::Reference<'a>>, gi
 
 fn get_tree_path<'a>(
     tree: &'a git2::Tree,
-    path: &Path,
+    path: TreePath,
 ) -> Result<Option<git2::TreeEntry<'a>>, git2::Error> {
-    match tree.get_path(path) {
+    match tree.get_path(path.as_ref()) {
         Ok(ent) => Ok(Some(ent)),
         Err(e) if e.code() == git2::ErrorCode::NotFound => Ok(None),
         Err(e) => Err(e),
     }
 }
 
+fn get_blob_oid<'a>(tree: &'a git2::Tree, tree_path: TreePath) -> Result<Option<git2::Oid>, Error> {
+    match get_tree_path(&tree, tree_path)? {
+        Some(ent) if ent.kind() == Some(git2::ObjectType::Blob) => Ok(Some(ent.id())),
+        _ => Ok(None),
+    }
+}
+
+fn get_as_blob<'a>(
+    repo: &'a Repository,
+    tree: &git2::Tree,
+    path: TreePath,
+) -> Result<Option<git2::Blob<'a>>, git2::Error> {
+    let ent = match get_tree_path(tree, path)? {
+        Some(ent) => ent,
+        None => return Ok(None),
+    };
+
+    let obj = ent.to_object(repo)?;
+    match obj.into_blob() {
+        Ok(blob) => Ok(Some(blob)),
+        Err(_) => Ok(None),
+    }
+}
+
 pub struct ReadOnly<'a> {
-    repo_path: &'a Path,
+    repo_path: &'a RepoPath,
     repo: Repository,
 }
 
@@ -94,31 +121,74 @@ impl ReadOnly<'_> {
             Some(head) => {
                 let head_commit = head.peel_to_commit().unwrap();
                 let tree = head_commit.tree()?;
-                let tree_path = article
-                    .path
-                    .strip_prefix(&self.repo_path)
-                    .expect("Invalid git repo path");
+                let tree_path = self.repo_path.tree_path(&article.path);
 
-                // jesus christ FIXME
-                match tree.get_path(tree_path) {
-                    Ok(entry) => match entry.to_object(&self.repo)?.as_blob() {
-                        Some(blob) => Ok(Some(blob.id())),
-                        None => panic!(),
-                    },
-                    Err(_) => Ok(None),
-                }
+                get_blob_oid(&tree, tree_path)
             }
         }
     }
 
-    pub fn history_of_file(&self) -> () {
-        todo!()
+    pub fn history(&self, article: &WikiArticle) -> Result<Vec<HistoryEntry>, Error> {
+        let tree_path = self.repo_path.tree_path(&article.path);
+
+        let mut rev_walk = self.repo.revwalk()?;
+        rev_walk.set_sorting(git2::Sort::TIME)?;
+        match repo_head(&self.repo)? {
+            Some(_) => {
+                rev_walk.push_head()?;
+            }
+            _ => return Ok(Vec::new()),
+        };
+
+        let mut ret = Vec::new();
+        for oid in rev_walk {
+            let oid = oid?;
+            if let Ok(commit) = self.repo.find_commit(oid) {
+                let tree = commit.tree()?;
+                if let Some(_) = get_blob_oid(&tree, tree_path)? {
+                    let signature = commit.author();
+                    ret.push(HistoryEntry {
+                        user: UserAccount {
+                            name: try_to_string(signature.name()),
+                            email: try_to_string(signature.email()),
+                        },
+                        date: time::OffsetDateTime::from_unix_timestamp(commit.time().seconds()),
+                        summary: commit
+                            .summary()
+                            .map(ToOwned::to_owned)
+                            .unwrap_or_else(|| String::new()),
+                    });
+                }
+            }
+        }
+
+        Ok(ret)
     }
 }
 
-pub struct RepoLock<'a> {
-    path: &'a Path,
-    repo: MutexGuard<'a, Repository>,
+// FIXME: javascript can't parse ISO dates. I have no words.
+//pub struct ISOUtcDate(time::OffsetDateTime);
+//
+//impl ISOUtcDate {
+//    pub fn from_unix(time: i64) -> Self {
+//        Self(time::OffsetDateTime::from_unix_timestamp(time))
+//    }
+//}
+//
+//impl std::fmt::Display for ISOUtcDate {
+//    fn fmt(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+//        self.0.lazy_format("%FT%TZ").fmt(formatter)
+//    }
+//}
+
+fn try_to_string(opt: Option<&str>) -> String {
+    opt.map(ToOwned::to_owned).unwrap_or_else(|| String::new())
+}
+
+pub struct HistoryEntry {
+    pub user: crate::user_storage::UserAccount,
+    pub date: time::OffsetDateTime,
+    pub summary: String,
 }
 
 fn write_and_commit_file(
@@ -133,7 +203,7 @@ fn write_and_commit_file(
         Some((_, ref tree)) => Some(tree),
         None => None,
     })?;
-    tree_builder.insert(commit_info.path, article_oid, 0o100644)?;
+    tree_builder.insert(commit_info.path.as_ref(), article_oid, 0o100644)?;
     let tree_oid = tree_builder.write()?;
     let tree = repo.find_tree(tree_oid).unwrap();
 
@@ -155,9 +225,14 @@ fn write_and_commit_file(
 }
 
 struct CommitInfo<'a> {
-    path: &'a Path,
+    path: TreePath<'a>,
     signature: git2::Signature<'a>,
     msg: &'a str,
+}
+
+pub struct RepoLock<'a> {
+    path: &'a RepoPath,
+    repo: MutexGuard<'a, Repository>,
 }
 
 impl<'a> RepoLock<'a> {
@@ -167,10 +242,7 @@ impl<'a> RepoLock<'a> {
         account: &UserAccount,
         edit: EditSubmit,
     ) -> Result<api::Commit, Error> {
-        let tree_path = article
-            .path
-            .strip_prefix(&self.path)
-            .expect("Invalid git repo path");
+        let tree_path = self.path.tree_path(&article.path);
 
         let signature = Signature::now(&account.name, &account.email).unwrap();
         let commit_msg = format!("Update {}", article.title);
@@ -198,6 +270,7 @@ impl<'a> RepoLock<'a> {
 
                 match has_diff {
                     Some(ent) => {
+                        // FIXME: use get_as_blob here
                         // TODO: handle if the TreeEntry is a subtree(directory)
                         let obj = ent.to_object(&self.repo)?;
                         let blob = obj.as_blob().unwrap();
