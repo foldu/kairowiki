@@ -6,24 +6,28 @@
 {% endblock %}
 
 {% block content %}
-<main id="history" class="text-content">
-    <ul>
-        {% for entry in history %}
-            <li>
-                <div class="date">
-                    {{ entry.date }}
-                </div>
-                <div>
-                    <a href="mailto:{{ entry.user.email }}">
-                        {{ entry.user.name }}
-                    </a>
-                </div>
-                <div>
-                    {{ entry.summary }}
-                </div>
-            </li>
-        {% endfor %}
-
-    </ul>
+<main id="history" class="flex-centered">
+  <ul>
+    {% for entry in history %}
+      <li>
+        <div class="date">
+          {{ entry.date }}
+        </div>
+        <div>
+          <a href="mailto:{{ entry.user.email }}">
+            {{ entry.user.name }}
+          </a>
+        </div>
+        <div>
+          <a href="/wiki/{{ title }}?rev={{entry.rev}}">
+            {{ entry.rev }}
+          </a>
+    </div>
+        <div>
+          {{ entry.summary }}
+        </div>
+      </li>
+    {% endfor %}
+  </ul>
 </main>
 {% endblock %}

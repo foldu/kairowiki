@@ -50,6 +50,7 @@ impl ReadOnly<'_> {
                         },
                         date: time::OffsetDateTime::from_unix_timestamp(commit.time().seconds()),
                         summary: try_to_string(commit.summary()),
+                        rev: oid,
                     });
                 }
             }
@@ -82,5 +83,5 @@ pub struct HistoryEntry {
     pub user: crate::user_storage::UserAccount,
     pub date: time::OffsetDateTime,
     pub summary: String,
+    pub rev: git2::Oid,
 }
-
