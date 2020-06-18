@@ -15,7 +15,7 @@ blake3 = "0.3.4"
 bstr = "0.2.13"
 bytes = "0.5.4"
 cookie = "0.14.1"
-derive_more = "0.99.7"
+derive_more = "0.99.8"
 envy = "0.4.1"
 futures-util = "0.3.5"
 git2 = "0.13.6"
@@ -30,7 +30,7 @@ serde = { version = "1.0.112", features = ["derive"] }
 smallvec = "1.4.0"
 snafu = "0.6.8"
 syntect = { version = "4.2.0", features = ["html"] }
-thiserror = "1.0.19"
+thiserror = "1.0.20"
 time = "0.2.16"
 tokio = { version = "0.2.21", features = ["rt-threaded", "sync", "signal"] }
 tracing = "0.1.15"
@@ -38,7 +38,7 @@ tracing-futures = "0.2.4"
 tracing-subscriber = "0.2.5"
 tree_magic = "0.2.3"
 url = { version = "2.1.1", features = ["serde"] }
-urlencoding = "1.0.0"
+urlencoding = "1.1.1"
 uuid = { version = "0.8.1", features = ["v4"] }
 warp = "0.2.3"
 
