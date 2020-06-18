@@ -1,5 +1,5 @@
 use super::{RepoPath, TreePath};
-use crate::{api, article::WikiArticle, handlers::api::EditSubmit, user_storage::UserAccount};
+use crate::{api, article::WikiArticle, api::EditSubmit, user_storage::UserAccount};
 use git2::{Repository, ResetType, Signature};
 use tokio::sync::MutexGuard;
 
