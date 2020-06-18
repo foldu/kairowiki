@@ -1,3 +1,5 @@
+use serde::{de::Deserializer, Deserialize};
+
 #[derive(serde::Serialize)]
 #[serde(rename_all = "snake_case", tag = "type")]
 pub enum Commit {
@@ -26,4 +28,33 @@ where
         let hex = hex::encode(self.0.as_ref());
         serializer.serialize_str(&hex)
     }
+}
+
+fn deserialize_oid<'de, D>(deserializer: D) -> Result<Option<git2::Oid>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    use serde::de::Error;
+    let s = Option::<String>::deserialize(deserializer)?;
+    match s {
+        Some(s) => git2::Oid::from_str(&s).map(Some).map_err(D::Error::custom),
+        None => Ok(None),
+    }
+}
+
+#[derive(serde::Deserialize)]
+pub struct PreviewMarkdown {
+    pub markdown: String,
+}
+
+#[derive(serde::Deserialize)]
+pub struct EditSubmit {
+    pub markdown: String,
+    #[serde(deserialize_with = "deserialize_oid")]
+    pub oid: Option<git2::Oid>,
+}
+
+#[derive(serde::Serialize)]
+pub struct RenderedMarkdown {
+    pub rendered: String,
 }
