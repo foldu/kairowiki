@@ -22,14 +22,7 @@ pub struct MarkdownRenderer {
 }
 
 fn title_to_id(title: &str) -> String {
-    let prefix = "u-";
-    let mut ret = String::with_capacity(title.len() + prefix.len());
-    ret.push_str(prefix);
-    ret.extend(title.chars().map(|c| match c {
-        ' ' => '-',
-        c => c,
-    }));
-    ret
+    urlencoding::encode(title)
 }
 
 #[derive(thiserror::Error, Debug)]
