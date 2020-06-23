@@ -3,11 +3,12 @@
 , sqlite
 , pkg-config
 , debug
+, mime-types
 }:
 
 let
   src = builtins.filterSource
-    (path: type: type != "directory" || builtins.baseNameOf path != "target")
+    (path: type: type != "directory" || (let basename = builtins.baseNameOf path; in basename != "target" && basename != "data"))
     ./.;
 in
 naersk.buildPackage {
@@ -25,7 +26,8 @@ naersk.buildPackage {
     pkg-config
   ];
   postInstall = ''
-    # FIXME: should copy into more UNIXy path like /usr/lib/kairowiki
+    mkdir -p "$out/etc"
+    cp ${mime-types}/etc/mime.types "$out/etc"
     mkdir -p "$out/usr/lib/kairowiki"
     cp -r ${src}/static "$out/usr/lib/kairowiki"
   '';

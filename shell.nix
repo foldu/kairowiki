@@ -11,4 +11,5 @@ pkgs.mkShell rec {
     pkg-config
     sqlite
   ];
+  MIME_TYPES_PATH = "${pkgs.mime-types}/etc/mime.types";
 }

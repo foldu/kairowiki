@@ -29,16 +29,19 @@ impl Data {
             pool.clone(),
             file_storage::Config {
                 storage_path: cfg.storage_path.clone(),
+                // TODO: make this configurable
                 allowed_mime_types: vec![
                     mime::IMAGE_JPEG,
                     mime::IMAGE_PNG,
                     mime::IMAGE_GIF,
                     mime::IMAGE_SVG,
+                    "image/webp".parse().unwrap(),
                 ],
                 route: "/storage".to_owned(),
+                mime_types_path: &cfg.mime_types_path,
             },
-        )
-        .await?;
+        )?;
+
         let file_storage = migrations.run(file_storage).await?;
 
         let theme_path = cfg.static_dir.join("hl.css");
@@ -132,6 +135,9 @@ pub struct Config {
 
     #[serde(default = "default_ip_addr")]
     pub ip_addr: IpAddr,
+
+    #[serde(default = "default_mime_types_path")]
+    pub mime_types_path: PathBuf,
 }
 
 fn tru() -> bool {
@@ -180,4 +186,8 @@ fn default_theme_name() -> String {
 
 fn default_ip_addr() -> IpAddr {
     IpAddr::V4(Ipv4Addr::UNSPECIFIED)
+}
+
+pub fn default_mime_types_path() -> PathBuf {
+    PathBuf::from("/etc/mime.types")
 }
