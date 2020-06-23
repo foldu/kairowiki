@@ -18,6 +18,7 @@ naersk.buildPackage {
     $src/init_db.sh
   '';
   DATABASE_URL = "sqlite://data/db/db.sqlite";
+  MIME_TYPES_PATH = "${mime-types}/etc/mime.types";
   release = !debug;
   doCheck = debug;
   buildInputs = [
