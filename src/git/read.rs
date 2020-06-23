@@ -60,7 +60,6 @@ impl ReadOnly<'_> {
     }
 }
 
-// FIXME: javascript can't parse ISO dates. I have no words.
 pub struct ISOUtcDate(time::OffsetDateTime);
 
 impl ISOUtcDate {
