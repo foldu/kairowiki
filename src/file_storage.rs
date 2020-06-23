@@ -20,7 +20,7 @@ pub struct FileStorage {
 
 pub struct Config<'a> {
     pub storage_path: String,
-    pub allowed_mime_types: Vec<Mime>,
+    pub allowed_mime_types: &'a [Mime],
     pub route: String,
     pub mime_types_path: &'a Path,
 }

@@ -51,6 +51,6 @@ pub async fn article_info(
 
     Ok(warp::reply::json(&crate::api::ArticleInfo {
         markdown,
-        oid: oid.map(crate::api::HexEncode),
+        oid: oid.map(crate::serde::HexEncode),
     }))
 }

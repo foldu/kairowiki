@@ -2,6 +2,7 @@ use crate::{
     file_storage::{self, FileStorage},
     git::Repo,
     markdown::MarkdownRenderer,
+    serde::SeparatedList,
     user_storage,
 };
 use std::{
@@ -30,13 +31,7 @@ impl Data {
             file_storage::Config {
                 storage_path: cfg.storage_path.clone(),
                 // TODO: make this configurable
-                allowed_mime_types: vec![
-                    mime::IMAGE_JPEG,
-                    mime::IMAGE_PNG,
-                    mime::IMAGE_GIF,
-                    mime::IMAGE_SVG,
-                    "image/webp".parse().unwrap(),
-                ],
+                allowed_mime_types: &cfg.allowed_mime_types.0,
                 route: "/storage".to_owned(),
                 mime_types_path: &cfg.mime_types_path,
             },
@@ -138,6 +133,9 @@ pub struct Config {
 
     #[serde(default = "default_mime_types_path")]
     pub mime_types_path: PathBuf,
+
+    #[serde(default = "default_mime_types")]
+    pub allowed_mime_types: crate::serde::SeparatedList<mime::Mime>,
 }
 
 fn tru() -> bool {
@@ -190,4 +188,14 @@ fn default_ip_addr() -> IpAddr {
 
 pub fn default_mime_types_path() -> PathBuf {
     PathBuf::from("/etc/mime.types")
+}
+
+fn default_mime_types() -> SeparatedList<mime::Mime> {
+    SeparatedList(vec![
+        mime::IMAGE_JPEG,
+        mime::IMAGE_PNG,
+        mime::IMAGE_GIF,
+        mime::IMAGE_SVG,
+        "image/webp".parse().unwrap(),
+    ])
 }
