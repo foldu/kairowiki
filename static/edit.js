@@ -75,14 +75,44 @@ function initMonaco(text) {
                 minimap: {
                     enabled: false,
                 },
-            }
+            },
         );
     });
 }
 
-(() => {
-    const fileInput = document.querySelector(".file-input");
-    fileInput.addEventListener("change", async () => {
+function e(ty, attrs, children) {
+    const ret = document.createElement(ty);
+
+    if (attrs !== undefined) Object.assign(ret, attrs);
+
+    if (children !== undefined) ret.append(...children);
+
+    return ret;
+}
+
+function insertTextAtCursor(text) {
+    const selection = window.editor.getSelection();
+    const range = new monaco.Range(
+        selection.startLineNumber,
+        selection.startColumn,
+        selection.endLineNumber,
+        selection.endColumn,
+    );
+    const id = { major: 1, minor: 1 };
+    const op = {
+        identifier: id,
+        range: range,
+        text: text,
+        forceMoveMarkers: true,
+    };
+    editor.executeEdits("my-source", [op]);
+}
+
+function addFileInput() {
+    const uploadFile = async (evt) => {
+        const fileInput = evt.target;
+        const listElt = fileInput.closest("li");
+
         const file = fileInput.files[0];
         const data = new FormData();
         data.append("file", file);
@@ -97,11 +127,36 @@ function initMonaco(text) {
         }
 
         const body = await resp.json();
-        document.querySelector(
-            ".file-link"
-        ).innerHTML = `<a href=${body.url}>${body.url}</a>`;
-    });
-})();
+
+        listElt.append(
+            e("a", { href: body.url, textContent: body.url }),
+            e("button", {
+                onclick: () =>
+                    insertTextAtCursor(
+                        `![Enter alternate description here](${body.url})`,
+                    ),
+                textContent: "Insert markdown",
+            }),
+            e("button", {
+                onclick: () => listElt.remove(),
+                textContent: "Delete",
+            }),
+        );
+        addFileInput();
+    };
+
+    const listElt = e("li", {}, [
+        e("input", {
+            type: "file",
+            classList: "file-input",
+            onchange: uploadFile,
+        }),
+    ]);
+
+    document.querySelector("#file-list").append(listElt);
+}
+
+addFileInput();
 
 function switchTo(elt) {
     const classList = elt.classList;
