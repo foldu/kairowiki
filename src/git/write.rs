@@ -1,5 +1,5 @@
 use super::{RepoPath, TreePath};
-use crate::{api, article::WikiArticle, api::EditSubmit, user_storage::UserAccount};
+use crate::{api, api::EditSubmit, article::WikiArticle, user_storage::UserAccount};
 use git2::{Repository, ResetType, Signature};
 use tokio::sync::MutexGuard;
 
@@ -71,7 +71,7 @@ impl<'a> RepoLock<'a> {
                 let head_tree = head_commit.tree()?;
 
                 let head_article = super::get_tree_path(&head_tree, tree_path)?;
-                let has_diff = match (head_article, edit.oid) {
+                let diff = match (head_article, edit.oid) {
                     // somebody changed the article while editing
                     (Some(current), Some(start)) if current.id() != start => Some(current),
                     // somebody created article with the same name while editing
@@ -80,7 +80,7 @@ impl<'a> RepoLock<'a> {
                     _ => None,
                 };
 
-                match has_diff {
+                match diff {
                     Some(ent) => {
                         // FIXME: use get_as_blob here
                         let obj = ent.to_object(&self.repo)?;

@@ -40,6 +40,7 @@ url = { version = "2.1.1", features = ["serde"] }
 urlencoding = "1.1.1"
 uuid = { version = "0.8.1", features = ["v4"] }
 warp = "0.2.3"
+itertools = "0.9.0"
 
 [dependencies.sqlx]
 git = "https://github.com/launchbadge/sqlx"

@@ -1,4 +1,5 @@
 #![allow(unused)]
+use itertools::Itertools;
 
 #[derive(Default)]
 pub struct Builder<'a> {
@@ -17,7 +18,6 @@ fn create_directives(directives: &[(&str, &[&str])]) -> String {
                 Some(format!("{} {};", name, sources.join(" ")))
             }
         })
-        .collect::<Vec<_>>()
         .join(" ")
 }
 

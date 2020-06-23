@@ -1,5 +1,6 @@
 use crate::templates::HeadlineStart;
 use askama::Template;
+use itertools::Itertools;
 use pulldown_cmark::{CodeBlockKind, CowStr, Event, Options, Tag};
 use std::{
     collections::VecDeque,
@@ -48,12 +49,7 @@ impl MarkdownRenderer {
             .get(theme_name)
             .map(|theme| theme.to_owned())
             .ok_or_else(|| {
-                let theme_list = theme_set
-                    .themes
-                    .keys()
-                    .map(|k| k.as_str())
-                    .collect::<Vec<_>>()
-                    .join(", ");
+                let theme_list = theme_set.themes.keys().join(", ");
 
                 Error::ThemeNotFound {
                     theme_name: theme_name.into(),

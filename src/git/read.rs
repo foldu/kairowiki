@@ -48,7 +48,7 @@ impl ReadOnly<'_> {
                             name: try_to_string(signature.name()),
                             email: try_to_string(signature.email()),
                         },
-                        date: time::OffsetDateTime::from_unix_timestamp(commit.time().seconds()),
+                        date: ISOUtcDate::from_unix(commit.time().seconds()),
                         summary: try_to_string(commit.summary()),
                         rev: oid,
                     });
@@ -61,19 +61,19 @@ impl ReadOnly<'_> {
 }
 
 // FIXME: javascript can't parse ISO dates. I have no words.
-//pub struct ISOUtcDate(time::OffsetDateTime);
-//
-//impl ISOUtcDate {
-//    pub fn from_unix(time: i64) -> Self {
-//        Self(time::OffsetDateTime::from_unix_timestamp(time))
-//    }
-//}
-//
-//impl std::fmt::Display for ISOUtcDate {
-//    fn fmt(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
-//        self.0.lazy_format("%FT%TZ").fmt(formatter)
-//    }
-//}
+pub struct ISOUtcDate(time::OffsetDateTime);
+
+impl ISOUtcDate {
+    pub fn from_unix(time: i64) -> Self {
+        Self(time::OffsetDateTime::from_unix_timestamp(time))
+    }
+}
+
+impl std::fmt::Display for ISOUtcDate {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+        self.0.lazy_format("%FT%TZ").fmt(formatter)
+    }
+}
 
 fn try_to_string(opt: Option<&str>) -> String {
     opt.map(ToOwned::to_owned).unwrap_or_else(String::new)
@@ -81,7 +81,7 @@ fn try_to_string(opt: Option<&str>) -> String {
 
 pub struct HistoryEntry {
     pub user: crate::user_storage::UserAccount,
-    pub date: time::OffsetDateTime,
+    pub date: ISOUtcDate,
     pub summary: String,
     pub rev: git2::Oid,
 }
