@@ -26,7 +26,7 @@ pulldown-cmark = { version = "0.7.1", default-features = false, features = ["sim
 rand = "0.7.3"
 regex = "1.3.9"
 rust-argon2 = "0.8.2"
-serde = { version = "1.0.112", features = ["derive"] }
+serde = { version = "1.0.114", features = ["derive"] }
 smallvec = "1.4.0"
 syntect = { version = "4.2.0", features = ["html"] }
 thiserror = "1.0.20"
