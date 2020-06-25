@@ -17,7 +17,7 @@
     };
 
     const title = stripPrefix(window.location.pathname, "/edit/");
-    let response = await fetch("/api/article_info/" + title, {
+    const response = await fetch("/api/article_info/" + title, {
         method: "GET",
     });
 
@@ -90,8 +90,8 @@ function e(ty, attrs, children) {
     return ret;
 }
 
-function insertTextAtCursor(text) {
-    const selection = window.editor.getSelection();
+function insertTextAtCursor(editor, text) {
+    const selection = editor.getSelection();
     const range = new monaco.Range(
         selection.startLineNumber,
         selection.startColumn,
@@ -106,6 +106,10 @@ function insertTextAtCursor(text) {
         forceMoveMarkers: true,
     };
     editor.executeEdits("my-source", [op]);
+}
+
+function clearFileList(elt) {
+    elt.value = "";
 }
 
 function addFileInput() {
@@ -123,6 +127,7 @@ function addFileInput() {
         });
         if (resp.status !== 200) {
             console.error(resp);
+            clearFileList(fileInput);
             return;
         }
 
@@ -133,6 +138,7 @@ function addFileInput() {
             e("button", {
                 onclick: () =>
                     insertTextAtCursor(
+                        window.editor,
                         `![Enter alternate description here](${body.url})`,
                     ),
                 textContent: "Insert markdown",
