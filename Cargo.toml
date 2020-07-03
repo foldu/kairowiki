@@ -9,7 +9,7 @@ license = "Unlicense OR MIT"
 
 [dependencies]
 anyhow = "1.0.31"
-askama = "0.9.0"
+askama = "0.10.1"
 async-trait = "0.1.36"
 blake3 = "0.3.4"
 bstr = "0.2.13"
