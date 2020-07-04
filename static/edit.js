@@ -43,6 +43,7 @@ document.querySelector("#save-button").addEventListener("click", async () => {
         markdown: window.model.getValue(),
         oid: window.model.articleInfo.oid,
         rev: window.model.articleInfo.rev,
+        commitMsg: document.querySelector("#commit-msg").value,
     };
     const response = await fetch("/api/edit/" + window.model.title, {
         method: "PUT",
@@ -56,7 +57,7 @@ document.querySelector("#save-button").addEventListener("click", async () => {
     if (response.status === 200) {
         const body = await response.json();
         switch (body.type) {
-            case "no_conflict":
+            case "noConflict":
                 window.location = "/wiki/" + window.model.title;
                 break;
             case "merged":
@@ -66,6 +67,9 @@ document.querySelector("#save-button").addEventListener("click", async () => {
                     rev: body.rev,
                 };
                 switchToDiff(body);
+                break;
+            default:
+                console.error("Unhandled case", body.type);
                 break;
         }
     } else {

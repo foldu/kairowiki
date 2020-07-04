@@ -1,7 +1,7 @@
 use crate::serde::Oid;
 
 #[derive(serde::Serialize)]
-#[serde(rename_all = "snake_case", tag = "type")]
+#[serde(rename_all = "camelCase", tag = "type")]
 pub enum Commit {
     Merged { merged: String, oid: Oid, rev: Oid },
 
@@ -9,7 +9,7 @@ pub enum Commit {
 }
 
 #[derive(serde::Serialize)]
-#[serde(rename_all = "snake_case")]
+#[serde(rename_all = "camelCase")]
 pub struct ArticleInfo {
     pub markdown: String,
     pub oid: Option<Oid>,
@@ -17,11 +17,13 @@ pub struct ArticleInfo {
 }
 
 #[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct PreviewMarkdown {
     pub markdown: String,
 }
 
 #[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct EditSubmit {
     pub commit_msg: String,
     pub markdown: String,
@@ -30,6 +32,7 @@ pub struct EditSubmit {
 }
 
 #[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct RenderedMarkdown {
     pub rendered: String,
 }
