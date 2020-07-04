@@ -4,12 +4,9 @@ use serde::{
 };
 use std::{fmt::Display, marker::PhantomData, str::FromStr};
 
-pub struct HexEncode<T>(pub T);
+pub struct Oid(pub git2::Oid);
 
-impl<T> serde::Serialize for HexEncode<T>
-where
-    T: AsRef<[u8]>,
-{
+impl serde::Serialize for Oid {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
@@ -19,14 +16,28 @@ where
     }
 }
 
-pub fn deserialize_oid<'de, D>(deserializer: D) -> Result<Option<git2::Oid>, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    let s = Option::<String>::deserialize(deserializer)?;
-    match s {
-        Some(s) => git2::Oid::from_str(&s).map(Some).map_err(D::Error::custom),
-        None => Ok(None),
+impl<'de> Deserialize<'de> for Oid {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct OidVisitor;
+        impl Visitor<'_> for OidVisitor {
+            type Value = Oid;
+
+            fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+                formatter.write_str("A comma separated list")
+            }
+
+            fn visit_str<E>(self, s: &str) -> Result<Self::Value, E>
+            where
+                E: serde::de::Error,
+            {
+                s.parse::<git2::Oid>().map_err(Error::custom).map(Oid)
+            }
+        }
+
+        deserializer.deserialize_str(OidVisitor)
     }
 }
 
@@ -72,4 +83,18 @@ where
             })
             .map(Self)
     }
+}
+
+#[test]
+fn roundtrip_oid() {
+    let oid = "3fc1961eb2ce860a1c05b4cd6a36ca9521127e78"
+        .parse::<git2::Oid>()
+        .unwrap();
+    #[derive(Deserialize, serde::Serialize)]
+    struct Test {
+        field: Oid,
+    }
+    let serialized = serde_json::to_string(&Test { field: Oid(oid) }).unwrap();
+    let deserialized: Test = serde_json::from_str(&serialized).unwrap();
+    assert_eq!(oid, deserialized.field.0);
 }

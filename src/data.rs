@@ -18,7 +18,7 @@ impl Data {
     pub async fn from_env() -> Result<Self, anyhow::Error> {
         let cfg: Config = envy::from_env()?;
         mkdir_p(&cfg.git_repo)?;
-        let repo = Repo::open_or_init(cfg.git_repo.clone())?;
+        let repo = Repo::open_or_init(cfg.git_repo.clone(), &cfg.home_wiki_page)?;
 
         let pool = crate::sqlite::open(&cfg.db_file, cfg.db_pool_size).await?;
         let migrations = crate::migrations::Migrations::new(pool.clone()).await?;

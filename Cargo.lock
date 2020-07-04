@@ -857,6 +857,7 @@ dependencies = [
  "regex",
  "rust-argon2",
  "serde",
+ "serde_json",
  "smallvec",
  "sqlx",
  "syntect",

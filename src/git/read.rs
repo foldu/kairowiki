@@ -7,24 +7,24 @@ pub struct ReadOnly<'a> {
     pub(super) repo: Repository,
 }
 
-impl ReadOnly<'_> {
-    pub fn get_current_oid_for_article(
-        &self,
-        article: &WikiArticle,
-    ) -> Result<Option<git2::Oid>, super::Error> {
-        match super::repo_head(&self.repo)? {
-            None => Ok(None),
-            Some(head) => {
-                let head_commit = head.peel_to_commit().unwrap();
-                let tree = head_commit.tree()?;
-                let tree_path = self.repo_path.tree_path(&article.path);
-
-                super::get_blob_oid(&tree, tree_path)
-            }
-        }
+impl<'a> ReadOnly<'a> {
+    pub fn head(&'a self) -> Result<git2::Reference<'a>, super::Error> {
+        Ok(super::repo_head(&self.repo)?.expect("Uninitialized repo"))
     }
 
-    pub fn history(&self, article: &WikiArticle) -> Result<Vec<HistoryEntry>, super::Error> {
+    pub fn oid_for_article(
+        &'a self,
+        rev: &'a git2::Reference,
+        article: &WikiArticle,
+    ) -> Result<Option<git2::Oid>, super::Error> {
+        let commit = rev.peel_to_commit().unwrap();
+        let tree = commit.tree()?;
+        let tree_path = self.repo_path.tree_path(&article.path);
+
+        super::get_blob_oid(&tree, tree_path)
+    }
+
+    pub fn history(&'a self, article: &WikiArticle) -> Result<Vec<HistoryEntry>, super::Error> {
         let tree_path = self.repo_path.tree_path(&article.path);
 
         let mut rev_walk = self.repo.revwalk()?;

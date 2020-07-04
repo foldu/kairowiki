@@ -24,10 +24,13 @@ pub async fn show_entry(data: Data, article: WikiArticle) -> Result<impl Reply, 
 
 pub async fn edit(
     data: Data,
-    _article: WikiArticle,
+    article: WikiArticle,
     _user_id: UserId,
 ) -> Result<impl Reply, Rejection> {
-    Ok(render!(templates::WikiEdit { wiki: data.wiki() }))
+    Ok(render!(templates::WikiEdit {
+        wiki: data.wiki(),
+        title: article.title.as_ref()
+    }))
 }
 
 pub async fn history(data: Data, article: WikiArticle) -> Result<impl Reply, Rejection> {

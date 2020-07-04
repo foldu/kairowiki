@@ -1,5 +1,6 @@
 use std::path::{Path, PathBuf};
 
+#[derive(derive_more::AsRef)]
 pub struct RepoPath(PathBuf);
 
 impl RepoPath {
