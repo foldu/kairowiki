@@ -1,9 +1,9 @@
 use super::{RepoPath, TreePath};
-use crate::{api, api::EditSubmit, article::WikiArticle, user_storage::UserAccount};
+use crate::{api, api::EditSubmit, article::WikiArticle, serde::Oid, user_storage::UserAccount};
 use git2::{Repository, ResetType, Signature};
 use tokio::sync::MutexGuard;
 
-fn write_and_commit_file(
+pub(super) fn write_and_commit_file(
     repo: &Repository,
     previous: Option<(git2::Commit, &git2::Tree)>,
     commit_info: &CommitInfo,
@@ -36,10 +36,10 @@ fn write_and_commit_file(
     repo.reset(commit.as_object(), ResetType::Hard, None)
 }
 
-struct CommitInfo<'a> {
-    path: TreePath<'a>,
-    signature: git2::Signature<'a>,
-    msg: &'a str,
+pub(super) struct CommitInfo<'a> {
+    pub path: TreePath<'a>,
+    pub signature: git2::Signature<'a>,
+    pub msg: &'a str,
 }
 
 pub struct RepoLock<'a> {
@@ -57,57 +57,64 @@ impl<'a> RepoLock<'a> {
         let tree_path = self.path.tree_path(&article.path);
 
         let signature = Signature::now(&account.name, &account.email).unwrap();
-        let commit_msg = format!("Update {}", article.title);
 
         let commit_info = CommitInfo {
             path: tree_path,
             signature,
-            msg: &commit_msg,
+            msg: &edit.commit_msg,
         };
 
-        match super::repo_head(&self.repo)? {
-            Some(head) => {
-                let head_commit = head.peel_to_commit().unwrap();
-                let head_tree = head_commit.tree()?;
+        let head = super::repo_head(&self.repo)?.expect("Empty repo");
+        let head_commit = head.peel_to_commit().unwrap();
+        let head_tree = head_commit.tree()?;
 
-                let head_article = super::get_tree_path(&head_tree, tree_path)?;
-                let diff = match (head_article, edit.oid) {
-                    // somebody changed the article while editing
-                    (Some(current), Some(start)) if current.id() != start => Some(current),
-                    // somebody created article with the same name while editing
-                    (Some(current), None) => Some(current),
-                    // no diff, just overwrite/add the file to the tree
-                    _ => None,
-                };
+        let head_article_oid = super::get_tree_path(&head_tree, &tree_path)?.map(|art| art.id());
+        let current_oid = match (head_article_oid, edit.oid) {
+            // somebody changed the article while editing
+            (Some(current), Some(ancestor)) if current != ancestor.0 => Some(current),
+            // somebody created article with the same name while editing
+            (Some(current), None) => Some(current),
+            // no diff, just overwrite/add the file to the tree
+            _ => None,
+        };
 
-                match diff {
-                    Some(ent) => {
-                        // FIXME: use get_as_blob here
-                        let obj = ent.to_object(&self.repo)?;
-                        // TODO: handle if the TreeEntry is a subtree(directory)
-                        let blob = obj.as_blob().unwrap();
-                        Ok(api::Commit::Diff {
-                            // TODO: handle binary files
-                            a: String::from_utf8(blob.content().to_vec()).unwrap(),
-                            b: edit.markdown,
-                        })
-                    }
-                    None => {
-                        write_and_commit_file(
-                            &self.repo,
-                            Some((head_commit, &head_tree)),
-                            &commit_info,
-                            &edit.markdown,
-                        )?;
-                        Ok(api::Commit::Ok)
-                    }
+        match current_oid {
+            Some(current_oid) => {
+                let ancestor_commit = self.repo.find_commit(edit.rev.0)?;
+                let ancestor_tree = ancestor_commit.tree()?;
+                let new_blob = self.repo.blob(edit.markdown.as_bytes())?;
+                let mut new_tree = self.repo.treebuilder(Some(&head_tree))?;
+                new_tree.insert(tree_path.as_ref(), new_blob, 0o100644)?;
+                let new_tree = self.repo.find_tree(new_tree.write()?)?;
+
+                let index = self
+                    .repo
+                    .merge_trees(&ancestor_tree, &head_tree, &new_tree, None)?;
+
+                if index.has_conflicts() {
+                    todo!("Index has conflicts");
                 }
-            }
-            // repo has no commits
-            None => {
-                write_and_commit_file(&self.repo, None, &commit_info, &edit.markdown)?;
 
-                Ok(api::Commit::Ok)
+                let entry = index.get_path(tree_path.as_ref(), 0).unwrap();
+
+                let merged = self.repo.find_blob(entry.id)?;
+                // TODO: handle if the TreeEntry is a subtree(directory)
+
+                Ok(api::Commit::Merged {
+                    // TODO: handle binary files
+                    merged: String::from_utf8(merged.content().to_vec()).unwrap(),
+                    oid: Oid(current_oid),
+                    rev: Oid(head_commit.id()),
+                })
+            }
+            None => {
+                write_and_commit_file(
+                    &self.repo,
+                    Some((head_commit, &head_tree)),
+                    &commit_info,
+                    &edit.markdown,
+                )?;
+                Ok(api::Commit::NoConflict)
             }
         }
     }

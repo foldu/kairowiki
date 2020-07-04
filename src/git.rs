@@ -27,9 +27,29 @@ pub struct Repo {
 }
 
 impl Repo {
-    pub fn open_or_init(path: PathBuf) -> Result<Self, Error> {
-        let repo = match Repository::open(&path) {
-            Err(e) if e.code() == git2::ErrorCode::NotFound => Repository::init(&path),
+    pub fn open_or_init(path: PathBuf, home_page: &str) -> Result<Self, Error> {
+        let repo_path = RepoPath::new(path.clone());
+        let repo = match Repository::open(repo_path.as_ref()) {
+            Err(e) if e.code() == git2::ErrorCode::NotFound => {
+                let repo = Repository::init(repo_path.as_ref())?;
+                let article = crate::article::WikiArticle::from_title(
+                    &repo_path.as_ref(),
+                    crate::article::ArticleTitle::new(home_page.to_owned()),
+                );
+
+                write::write_and_commit_file(
+                    &repo,
+                    None,
+                    &write::CommitInfo {
+                        path: repo_path.tree_path(&article.path),
+                        signature: git2::Signature::now("system", "system").unwrap(),
+                        msg: "Initial commit",
+                    },
+                    "This is the home page of your new wiki. Click on edit to put something here.",
+                )?;
+
+                Ok(repo)
+            }
             other => other,
         };
 
@@ -78,7 +98,7 @@ fn repo_head(repo: &Repository) -> Result<Option<git2::Reference<'_>>, git2::Err
 
 fn get_tree_path<'a>(
     tree: &'a git2::Tree,
-    path: TreePath,
+    path: &TreePath,
 ) -> Result<Option<git2::TreeEntry<'a>>, git2::Error> {
     match tree.get_path(path.as_ref()) {
         Ok(ent) => Ok(Some(ent)),
@@ -87,7 +107,10 @@ fn get_tree_path<'a>(
     }
 }
 
-fn get_blob_oid<'a>(tree: &'a git2::Tree, tree_path: TreePath) -> Result<Option<git2::Oid>, Error> {
+fn get_blob_oid<'a>(
+    tree: &'a git2::Tree,
+    tree_path: &TreePath,
+) -> Result<Option<git2::Oid>, Error> {
     match get_tree_path(&tree, tree_path)? {
         Some(ent) if ent.kind() == Some(git2::ObjectType::Blob) => Ok(Some(ent.id())),
         _ => Ok(None),
@@ -97,7 +120,7 @@ fn get_blob_oid<'a>(tree: &'a git2::Tree, tree_path: TreePath) -> Result<Option<
 fn get_as_blob<'a>(
     repo: &'a Repository,
     tree: &git2::Tree,
-    path: TreePath,
+    path: &TreePath,
 ) -> Result<Option<git2::Blob<'a>>, git2::Error> {
     let ent = match get_tree_path(tree, path)? {
         Some(ent) => ent,

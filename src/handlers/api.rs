@@ -38,10 +38,13 @@ pub async fn article_info(
     data: Data,
     article: WikiArticle,
 ) -> Result<impl warp::Reply, warp::Rejection> {
-    let oid: Option<git2::Oid> = tokio::task::block_in_place(|| {
-        data.repo
-            .read()
-            .and_then(|repo| repo.get_current_oid_for_article(&article))
+    let info = tokio::task::block_in_place(|| -> Result<_, crate::git::Error> {
+        let repo = data.repo.read()?;
+        let head = repo.head()?;
+        let oid = repo.oid_for_article(&head, &article)?;
+
+        let commit_id = head.peel_to_commit()?.id();
+        Ok((oid, commit_id))
     })
     .map_err(warp::reject::custom)?;
 
@@ -51,6 +54,7 @@ pub async fn article_info(
 
     Ok(warp::reply::json(&crate::api::ArticleInfo {
         markdown,
-        oid: oid.map(crate::serde::HexEncode),
+        oid: info.0.map(crate::serde::Oid),
+        rev: crate::serde::Oid(info.1),
     }))
 }

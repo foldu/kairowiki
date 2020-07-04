@@ -76,6 +76,9 @@ pub async fn handle_rejection(
     } else {
         // FIXME: should use display
         tracing::error!("{:?}", err);
-        template_response!(StatusCode::NOT_FOUND, templates::Error::not_found())
+        template_response!(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            templates::Error::internal_server()
+        )
     })
 }

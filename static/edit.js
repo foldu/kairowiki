@@ -1,4 +1,4 @@
-(async () => {
+window.addEventListener("load", async () => {
     require.config({
         paths: {
             vs:
@@ -22,70 +22,115 @@
     });
 
     // TODO: show error
-    if (response.status !== 200) return;
+    if (response.status !== 200) {
+        return;
+    }
 
-    const article_info = await response.json();
-    initMonaco(article_info.markdown);
+    const articleInfo = await response.json();
+    const editor = await initMonaco(articleInfo.markdown);
+    window.model = {
+        editor,
+        activeEditor: editor,
+        diffEditor: null,
+        articleInfo,
+        title,
+        getValue: () => editor.getValue(),
+    };
+});
 
-    document
-        .querySelector("#save-button")
-        .addEventListener("click", async () => {
-            const response = await fetch("/api/edit/" + title, {
-                method: "PUT",
-                credentials: "same-origin",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    markdown: window.editor.getValue(),
-                    oid: article_info.oid,
-                }),
-            });
+document.querySelector("#save-button").addEventListener("click", async () => {
+    const body = {
+        markdown: window.model.getValue(),
+        oid: window.model.articleInfo.oid,
+        rev: window.model.articleInfo.rev,
+        commitMsg: document.querySelector("#commit-msg").value,
+    };
+    const response = await fetch("/api/edit/" + window.model.title, {
+        method: "PUT",
+        credentials: "same-origin",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+    });
 
-            // TODO: handle diff if somebody else commited before
-            console.log(response);
-            if (response.status === 200) {
-                const body = await response.json();
-                console.log(body);
-                switch (body.type) {
-                    case "ok":
-                        window.location = "/wiki/" + title;
-                        break;
-                    case "diff":
-                        console.error("Got diff");
-                        break;
-                }
-            } else {
-                console.error(response);
-            }
-        });
-})();
+    if (response.status === 200) {
+        const body = await response.json();
+        switch (body.type) {
+            case "noConflict":
+                window.location = "/wiki/" + window.model.title;
+                break;
+            case "merged":
+                window.model.articleInfo = {
+                    ...window.model.articleInfo,
+                    oid: body.oid,
+                    rev: body.rev,
+                };
+                switchToDiff(body);
+                break;
+            default:
+                console.error("Unhandled case", body.type);
+                break;
+        }
+    } else {
+        console.error(response);
+    }
+});
+
+function switchToDiff(body) {
+    if (window.model.diffEditor === null) {
+        const diffDiv = document.querySelector("#diff-editor");
+        document.querySelector("#editor").classList.add("hidden");
+        diffDiv.classList.remove("hidden");
+        window.model.diffEditor = monaco.editor.createDiffEditor(diffDiv);
+    }
+
+    const modified = monaco.editor.createModel(body.merged);
+    window.model.getValue = () => modified.getValue();
+    window.model.activeEditor = window.model.diffEditor.getModifiedEditor();
+
+    window.model.diffEditor.setModel({
+        original: monaco.editor.createModel(window.model.editor.getValue()),
+        modified: modified,
+    });
+}
 
 function stripPrefix(s, prefix) {
     return s.indexOf(prefix) === 0 ? s.slice(prefix.length) : s;
 }
 
-function initMonaco(text) {
-    require(["vs/editor/editor.main"], function () {
-        window.editor = monaco.editor.create(
-            document.querySelector("#editor"),
-            {
-                value: text,
-                language: "markdown",
-                minimap: {
-                    enabled: false,
+async function initMonaco(text) {
+    return new Promise((resolve) => {
+        require(["vs/editor/editor.main"], function () {
+            const editor = monaco.editor.create(
+                document.querySelector("#editor"),
+                {
+                    value: text,
+                    language: "markdown",
+                    minimap: {
+                        enabled: false,
+                    },
                 },
-            },
-        );
+            );
+            resolve(editor);
+        });
     });
 }
 
-function e(ty, attrs, children) {
+function $e(ty, attrs, children) {
     const ret = document.createElement(ty);
 
-    if (attrs !== undefined) Object.assign(ret, attrs);
+    if (attrs !== undefined) {
+        Object.assign(ret, attrs);
+    }
 
-    if (children !== undefined) ret.append(...children);
+    if (children !== undefined) {
+        if (typeof children === "string") {
+            ret.textContent = children;
+        } else {
+            ret.append(...children);
+        }
+    }
 
     return ret;
 }
@@ -105,7 +150,28 @@ function insertTextAtCursor(editor, text) {
         text: text,
         forceMoveMarkers: true,
     };
-    editor.executeEdits("my-source", [op]);
+    editor.executeEdits("kairowiki", [op]);
+}
+
+function insertImageLink(editor, url) {
+    const md = `![](${body.url})`;
+    const selection = editor.getSelection();
+    const range = new monaco.Range(
+        selection.startLineNumber,
+        selection.startColumn,
+        selection.endLineNumber,
+        selection.endColumn,
+    );
+    const identifier = { major: 1, minor: 1 };
+    const insertOp = {
+        identifier,
+        range,
+        text: md,
+        forceMoveMarkers: true,
+    };
+
+    // TODO: figure out how to move the cursor to ![here](...)
+    editor.executeEdits("kairowiki", [insertOp]);
 }
 
 function clearFileList(elt) {
@@ -134,16 +200,16 @@ function addFileInput() {
         const body = await resp.json();
 
         listElt.append(
-            e("a", { href: body.url, textContent: body.url }),
-            e("button", {
+            $e("a", { href: body.url, textContent: body.url }),
+            $e("button", {
                 onclick: () =>
                     insertTextAtCursor(
-                        window.editor,
+                        window.model.activeEditor,
                         `![Enter alternate description here](${body.url})`,
                     ),
                 textContent: "Insert markdown",
             }),
-            e("button", {
+            $e("button", {
                 onclick: () => listElt.remove(),
                 textContent: "Delete",
             }),
@@ -151,8 +217,8 @@ function addFileInput() {
         addFileInput();
     };
 
-    const listElt = e("li", {}, [
-        e("input", {
+    const listElt = $e("li", {}, [
+        $e("input", {
             type: "file",
             classList: "file-input",
             onchange: uploadFile,
@@ -223,7 +289,7 @@ document
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
-                    markdown: window.editor.getValue(),
+                    markdown: window.model.editor.getValue(),
                 }),
             });
 

@@ -4,6 +4,7 @@ use askama::Template;
 #[derive(Template)]
 #[template(path = "edit.html")]
 pub struct WikiEdit<'a> {
+    pub title: &'a str,
     pub wiki: Wiki<'a>,
 }
 

@@ -7,12 +7,16 @@
     <button class="tab" id="preview-button">Preview</button>
   </div>
   <div id="editor-tab">
+    <div id="diff-editor" class="hidden"></div>
     <div id="editor"></div>
     <div id="file-upload">
       <ul id="file-list">
       </ul>
     </div>
-    <button id="save-button" type="submit">Save</button>
+    <div class="row">
+      <input id="commit-msg" type="text" value="Update {{ title }}"></input>
+      <button id="save-button" type="submit">Save</button>
+    </div>
   </div>
   <div id="preview-tab" class="hidden text-content">
     <article class="rendered-markdown">

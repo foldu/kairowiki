@@ -1,31 +1,38 @@
-#[derive(serde::Serialize)]
-#[serde(rename_all = "snake_case", tag = "type")]
-pub enum Commit {
-    Diff { a: String, b: String },
+use crate::serde::Oid;
 
-    Ok,
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase", tag = "type")]
+pub enum Commit {
+    Merged { merged: String, oid: Oid, rev: Oid },
+
+    NoConflict,
 }
 
 #[derive(serde::Serialize)]
-#[serde(rename_all = "snake_case")]
+#[serde(rename_all = "camelCase")]
 pub struct ArticleInfo {
     pub markdown: String,
-    pub oid: Option<crate::serde::HexEncode<git2::Oid>>,
+    pub oid: Option<Oid>,
+    pub rev: Oid,
 }
 
 #[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct PreviewMarkdown {
     pub markdown: String,
 }
 
 #[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct EditSubmit {
+    pub commit_msg: String,
     pub markdown: String,
-    #[serde(deserialize_with = "crate::serde::deserialize_oid")]
-    pub oid: Option<git2::Oid>,
+    pub oid: Option<Oid>,
+    pub rev: Oid,
 }
 
 #[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct RenderedMarkdown {
     pub rendered: String,
 }

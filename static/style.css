@@ -151,6 +151,10 @@ footer {
     height: 600px;
 }
 
+#diff-editor {
+    height: 600px;
+}
+
 #file-list {
     list-style-type: none;
     display: flex;
@@ -158,5 +162,19 @@ footer {
 }
 
 #file-list > li {
+    display: flex;
+}
+
+#diff-view {
+    display: flex;
+    flex-direction: column;
+}
+
+#edit-view {
+    display: flex;
+    flex-direction: column;
+}
+
+.row {
     display: flex;
 }

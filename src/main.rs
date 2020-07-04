@@ -60,6 +60,7 @@ async fn run() -> Result<(), anyhow::Error> {
 
     let wiki_entries = wiki
         .and(wiki_route.clone())
+        .and(warp::query())
         .and_then(handlers::wiki::show_entry);
 
     let edit_route = warp::path("edit")
@@ -160,6 +161,7 @@ async fn run() -> Result<(), anyhow::Error> {
         edit_submit,
         article_info
     };
+    //let routes = routes.or();
 
     let domain = data.config.domain.as_ref().cloned().unwrap_or_else(|| {
         url::Url::parse(&format!("http://localhost:{}", data.config.port)).unwrap()
