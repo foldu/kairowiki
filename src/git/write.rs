@@ -68,7 +68,7 @@ impl<'a> RepoLock<'a> {
         let head_commit = head.peel_to_commit().unwrap();
         let head_tree = head_commit.tree()?;
 
-        let head_article_oid = super::get_tree_path(&head_tree, tree_path)?.map(|art| art.id());
+        let head_article_oid = super::get_tree_path(&head_tree, &tree_path)?.map(|art| art.id());
         let current_oid = match (head_article_oid, edit.oid) {
             // somebody changed the article while editing
             (Some(current), Some(ancestor)) if current != ancestor.0 => Some(current),

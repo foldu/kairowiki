@@ -98,7 +98,7 @@ fn repo_head(repo: &Repository) -> Result<Option<git2::Reference<'_>>, git2::Err
 
 fn get_tree_path<'a>(
     tree: &'a git2::Tree,
-    path: TreePath,
+    path: &TreePath,
 ) -> Result<Option<git2::TreeEntry<'a>>, git2::Error> {
     match tree.get_path(path.as_ref()) {
         Ok(ent) => Ok(Some(ent)),
@@ -107,7 +107,10 @@ fn get_tree_path<'a>(
     }
 }
 
-fn get_blob_oid<'a>(tree: &'a git2::Tree, tree_path: TreePath) -> Result<Option<git2::Oid>, Error> {
+fn get_blob_oid<'a>(
+    tree: &'a git2::Tree,
+    tree_path: &TreePath,
+) -> Result<Option<git2::Oid>, Error> {
     match get_tree_path(&tree, tree_path)? {
         Some(ent) if ent.kind() == Some(git2::ObjectType::Blob) => Ok(Some(ent.id())),
         _ => Ok(None),
@@ -117,7 +120,7 @@ fn get_blob_oid<'a>(tree: &'a git2::Tree, tree_path: TreePath) -> Result<Option<
 fn get_as_blob<'a>(
     repo: &'a Repository,
     tree: &git2::Tree,
-    path: TreePath,
+    path: &TreePath,
 ) -> Result<Option<git2::Blob<'a>>, git2::Error> {
     let ent = match get_tree_path(tree, path)? {
         Some(ent) => ent,
