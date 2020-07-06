@@ -21,15 +21,30 @@ window.addEventListener("load", async () => {
         method: "GET",
     });
 
+    notify("test", "Test");
+
     // TODO: show error
     if (response.status !== 200) {
+        notify("Error", "Could not fetch article information");
         return;
     }
 
     const articleInfo = await response.json();
     const editor = await initMonaco(articleInfo.markdown);
+    const tabs = new Map([
+        [
+            document.querySelector("#edit-button"),
+            document.querySelector("#editor-tab"),
+        ],
+        [
+            document.querySelector("#preview-button"),
+            document.querySelector("#preview-tab"),
+        ],
+    ]);
+
     window.model = {
         editor,
+        tabs,
         activeEditor: editor,
         diffEditor: null,
         articleInfo,
@@ -66,6 +81,7 @@ document.querySelector("#save-button").addEventListener("click", async () => {
                     oid: body.oid,
                     rev: body.rev,
                 };
+                notify("Merge Conflict", "Your changes were auto-merged");
                 switchToDiff(body);
                 break;
             default:
@@ -73,6 +89,7 @@ document.querySelector("#save-button").addEventListener("click", async () => {
                 break;
         }
     } else {
+        notify("Error", "Could not save changes, please try again later");
         console.error(response);
     }
 });
@@ -115,6 +132,17 @@ async function initMonaco(text) {
             resolve(editor);
         });
     });
+}
+
+function notify(title, body) {
+    const elt = $e("li", {}, [$e("div", {}, title), $e("div", {}, body)]);
+    const removeNotification = () => {
+        elt.remove();
+    };
+    elt.onclick = removeNotification;
+    setTimeout(removeNotification, 5 * 1000);
+
+    document.querySelector("#notifications").append(elt);
 }
 
 function $e(ty, attrs, children) {
@@ -192,6 +220,7 @@ function addFileInput() {
             body: data,
         });
         if (resp.status !== 200) {
+            notify("Error", "Could not upload media, please try again later");
             console.error(resp);
             clearFileList(fileInput);
             return;
@@ -241,19 +270,8 @@ function switchTo(elt) {
     return wasActive;
 }
 
-const tabs = new Map([
-    [
-        document.querySelector("#edit-button"),
-        document.querySelector("#editor-tab"),
-    ],
-    [
-        document.querySelector("#preview-button"),
-        document.querySelector("#preview-tab"),
-    ],
-]);
-
 function switchTo(targetButton) {
-    const targetTab = tabs.get(targetButton);
+    const targetTab = window.model.tabs.get(targetButton);
     if (!targetTab.classList.contains("hidden")) {
         return false;
     }
@@ -261,7 +279,7 @@ function switchTo(targetButton) {
 
     targetTab.classList.remove("hidden");
 
-    for (const [button, tab] of tabs) {
+    for (const [button, tab] of window.model.tabs) {
         if (tab !== targetTab) {
             button.classList.remove("active");
             tab.classList.add("hidden");

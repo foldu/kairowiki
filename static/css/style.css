@@ -5,15 +5,54 @@ body {
 
 nav > ul {
     display: flex;
-    justify-content: space-around;
+    justify-content: space-between;
     align-items: center;
     list-style-type: none;
     margin: auto;
 }
 
+@media (min-width: 20rem) {
+    nav > ul {
+        width: 15rem;
+    }
+    .text-content {width: 15rem; }
+}
+
+@media (min-width: 40rem) {
+    nav > ul {
+        width: 35rem;
+    }
+    .rendered-markdown > h2 {
+        font-size: 1.5rem;
+    }
+    .rendered-markdown > h1 {
+        font-size: 2rem;
+    }
+    h1 {
+        font-size: 3.5rem;
+    }
+    .text-content {width: 35rem; }
+}
+
+@media (min-width: 60rem) {
+    .rendered-markdown > h2 {
+        font-size: 1.5rem;
+    }
+    .rendered-markdown > h1 {
+        font-size: 2rem;
+    }
+    h1 {
+        font-size: 3.5rem;
+    }
+    nav > ul {
+        width: 55rem;
+    }
+    .text-content {
+        width: 55rem;
+    }
+}
+
 .text-content {
-    max-width: 60rem;
-    min-width: 40rem;
     padding: 2rem;
     margin: auto;
 }
@@ -28,15 +67,16 @@ nav > ul {
     color: black;
 }
 
-.rendered-markdown > h1 > a:hover::before,
-.rendered-markdown > h2 > a:hover::before,
-.rendered-markdown > h3 > a:hover::before,
-.rendered-markdown > h4 > a:hover::before,
-.rendered-markdown > h5 > a:hover::before,
-.rendered-markdown > h6 > a:hover::before {
-    content: "§ ";
+.rendered-markdown > h1 > a:hover::after,
+.rendered-markdown > h2 > a:hover::after,
+.rendered-markdown > h3 > a:hover::after,
+.rendered-markdown > h4 > a:hover::after,
+.rendered-markdown > h5 > a:hover::after,
+.rendered-markdown > h6 > a:hover::after {
+    content: " §";
 }
 
+/*
 button {
     border: 1px solid;
     color: black;
@@ -46,6 +86,7 @@ button {
     text-decoration: none;
     display: inline-block;
 }
+*/
 
 button:hover {
     background: lightgray;
@@ -83,6 +124,8 @@ pre {
 
 #wiki-article-head.buttons {
     display: flex;
+    align-content: center;
+    justify-content: center;
     font-size: 1em;
 }
 
@@ -177,4 +220,48 @@ footer {
 
 .row {
     display: flex;
+}
+
+#notifications {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+    z-index: 1;
+    position: absolute;
+    right: 4em;
+    top: 2em;
+    list-style: none;
+}
+
+#notifications > li {
+    min-width: 30em;
+    /*
+    display: flex;
+    flex-direction: column;
+    */
+    border: dotted 1px;
+    padding: 1em;
+}
+
+.captioned-image {
+    float: right;
+    display: table;
+    border: solid 1px #bbb;
+    border-radius: 4px;
+    padding: 4px;
+}
+
+.text-content img {
+    max-height: 800px;
+    max-width: 400px;
+}
+
+.captioned-image > img {
+    display: table-cell;
+}
+
+.captioned-image > figcaption {
+    display: table-caption;
+    caption-side: bottom;
+    font-style: italic;
 }
