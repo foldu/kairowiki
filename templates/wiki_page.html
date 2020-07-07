@@ -4,7 +4,9 @@
 {% block content %}
 <main id="wiki-article" class="text-content">
   <div id="wiki-article-head">
-    <h1 class="wiki-article-title">{{ title }}</h1>
+    <a href="/wiki/{{ title }}">
+      <h1 class="wiki-article-title">{{ title }}</h1>
+    </a>
     <div class="buttons">
       <a href="/edit/{{ title }}" class="button">Edit</a>
       <a href="/history/{{ title }}" class="button">History</a>

@@ -1,10 +1,17 @@
 @import "~normalize.css/normalize.css";
 @import "skeleton.css";
 
+@font-face {
+    font-family: ibm-plex-sans;
+    src: url("~@ibm/plex/IBM-Plex-Sans/fonts/complete/ttf/IBMPlexSans-Regular.ttf");
+}
+
 body {
     display: flex;
     flex-direction: column;
     justify-content: center;
+    font-family: ibm-plex-sans;
+    font-size: 1.2rem;
 }
 
 nav > ul {
@@ -118,10 +125,6 @@ button.tab.active {
 
 button.tab:focus {
     outline: 0;
-}
-
-body {
-    font-family: Liberation Sans, Noto Sans, Sans;
 }
 
 pre {

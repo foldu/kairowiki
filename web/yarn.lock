@@ -2,6 +2,11 @@
 # yarn lockfile v1
 
 
+"@ibm/plex@^5.0.0":
+  version "5.0.0"
+  resolved "https://registry.yarnpkg.com/@ibm/plex/-/plex-5.0.0.tgz#352b06553c4efd35a20c4ad89527c21a45f775cc"
+  integrity sha512-I5WEKNNpg7x0f1CYSB3YRQ8j0wrt8pLy9H5fo7h0FF56LBiFR9CCdY/HzZcNU3wPgI0V9J2k2oI5X8WUZmS5rA==
+
 "@npmcli/move-file@^1.0.1":
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/@npmcli/move-file/-/move-file-1.0.1.tgz#de103070dac0f48ce49cf6693c23af59c0f70464"

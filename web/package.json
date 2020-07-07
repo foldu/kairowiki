@@ -8,6 +8,7 @@
     },
     "dependencies": {},
     "devDependencies": {
+        "@ibm/plex": "^5.0.0",
         "css-loader": "^3.4.0",
         "file-loader": "^5.0.2",
         "mini-css-extract-plugin": "^0.9.0",
