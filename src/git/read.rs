@@ -94,7 +94,7 @@ impl ISOUtcDate {
 
 impl std::fmt::Display for ISOUtcDate {
     fn fmt(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
-        self.0.lazy_format("%FT%TZ").fmt(formatter)
+        self.0.lazy_format("%FT%H:%M:%SZ").fmt(formatter)
     }
 }
 
