@@ -136,6 +136,9 @@ pub struct Config {
 
     #[serde(default = "default_mime_types")]
     pub allowed_mime_types: crate::serde::SeparatedList<mime::Mime>,
+
+    #[serde(default)]
+    pub dangerously_allow_script_eval_for_development_only: bool,
 }
 
 fn tru() -> bool {

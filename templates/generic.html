@@ -5,9 +5,10 @@
   <meta charset="utf-8">
   <title>{% block title %} {{ wiki.name }} {% endblock %}</title>
   {% block head %} {% endblock %}
-  <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="/static/kairowiki.css">
   <link rel="stylesheet" href="/static/hl.css">
   <link rel="icon" href="{{ wiki.logo }}">
+  <script src="/static/kairowiki.bundle.js" async></script>
 </head>
 
 <body>
@@ -27,8 +28,6 @@
     </ul>
   </nav>
   {% block content %} {% endblock %}
-
-  <footer>{{ wiki.footer }}</footer>
 
   {% block end %} {% endblock %}
 </body>

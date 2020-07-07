@@ -1,33 +1,39 @@
 {% extends "generic.html" %}
 {% block title %} {{ wiki.name }} - {{ title }} {% endblock %}
 
-{% block head %}
-<script src="/static/history.js" async></script>
-{% endblock %}
-
 {% block content %}
 <main id="history" class="flex-centered">
-  <ul>
-    {% for entry in history %}
-      <li>
-        <div class="date">
+  <table>
+    <thead>
+      <tr>
+        <td>Date</td>
+        <td>User</td>
+        <td>Commit id</td>
+        <td>Summary</td>
+      </tr>
+    </thead>
+    <tbody>
+      {% for entry in history %}
+      <tr>
+        <td class="date">
           {{ entry.date }}
-        </div>
-        <div>
+        </td>
+        <td>
           <a href="mailto:{{ entry.user.email }}">
             {{ entry.user.name }}
           </a>
-        </div>
-        <div>
-          <a href="/wiki/{{ title }}?rev={{entry.rev}}">
+        </td>
+        <td>
+          <a class="rev" href="/wiki/{{ title }}?rev={{ entry.rev }}">
             {{ entry.rev }}
           </a>
-    </div>
-        <div>
+        </td>
+        <td>
           {{ entry.summary }}
-        </div>
-      </li>
-    {% endfor %}
-  </ul>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
 </main>
 {% endblock %}

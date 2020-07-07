@@ -1,4 +1,4 @@
-use crate::templates::HeadlineStart;
+use crate::templates;
 use askama::Template;
 use itertools::Itertools;
 use pulldown_cmark::{CodeBlockKind, CowStr, Event, Options, Tag};
@@ -124,6 +124,26 @@ where
         let evt = self.it.next()?;
         // NOTE: self.extra is empty here
         match evt {
+            Event::Start(Tag::Image(kind, url, useless)) => match self.it.next()? {
+                Event::Text(caption) => match self.it.next() {
+                    Some(Event::End(Tag::Image(_, _, _))) => Some(Event::Html(
+                        Template::render(&templates::CaptionedImage {
+                            caption: caption.as_ref(),
+                            url: url.as_ref(),
+                        })
+                        .unwrap()
+                        .into(),
+                    )),
+                    _ => Some(Event::Start(Tag::Image(kind, caption, url))),
+                },
+                Event::End(Tag::Image(_, _, _)) => {
+                    Some(Event::Start(Tag::Image(kind, url, useless)))
+                }
+                other => {
+                    self.extra.push_back(other);
+                    Some(Event::Start(Tag::Image(kind, url, useless)))
+                }
+            },
             Event::Start(Tag::Heading(n)) => {
                 let n = std::cmp::max(std::cmp::min(n, 6), 1);
                 match self.it.next() {
@@ -147,7 +167,7 @@ where
 
                         // open link tag
                         Some(Event::Html(
-                            HeadlineStart {
+                            templates::HeadlineStart {
                                 strength: n,
                                 headline: headline.as_ref(),
                                 id: &title_to_id(&headline),

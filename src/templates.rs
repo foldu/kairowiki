@@ -85,6 +85,13 @@ pub struct HeadlineStart<'a> {
 }
 
 #[derive(Template)]
+#[template(path = "captioned_image.html")]
+pub struct CaptionedImage<'a> {
+    pub caption: &'a str,
+    pub url: &'a str,
+}
+
+#[derive(Template)]
 #[template(path = "error.html")]
 pub struct Error<'a> {
     code: u16,

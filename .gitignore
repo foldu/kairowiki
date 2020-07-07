@@ -1,4 +1,6 @@
 /target
 /data
 result
-static/hl.css
+static/css/hl.css
+node_modules
+dist

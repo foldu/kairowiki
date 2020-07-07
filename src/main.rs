@@ -171,12 +171,20 @@ async fn run() -> Result<(), anyhow::Error> {
         .allow_methods(vec!["GET", "PUT", "POST", "HEAD"])
         .allow_credentials(true)
         .allow_origin(domain.as_str())
-        .allow_origin("https://cdnjs.cloudflare.com")
         .build();
 
+    let mut script_sources = vec![domain.as_str()];
+    if data
+        .config
+        .dangerously_allow_script_eval_for_development_only
+    {
+        tracing::warn!("In development mode, script csp is currently broken");
+        script_sources.push("'unsafe-eval'");
+    }
+
     let csp = csp::Builder::new()
-        .script_sources(vec![domain.as_str(), "https://cdnjs.cloudflare.com"])
-        .worker_source("data:")
+        .script_sources(script_sources)
+        .worker_source(domain.as_str())
         .build();
 
     let routes = routes
