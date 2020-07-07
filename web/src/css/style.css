@@ -4,6 +4,7 @@
 body {
     display: flex;
     flex-direction: column;
+    justify-content: center;
 }
 
 nav > ul {
@@ -11,32 +12,32 @@ nav > ul {
     justify-content: space-between;
     align-items: center;
     list-style-type: none;
-    margin: auto;
 }
 
 @media (min-width: 20rem) {
     nav > ul {
         width: 15rem;
     }
-    .text-content {
+
+    body > * {
         width: 15rem;
     }
 }
 
 @media (min-width: 40rem) {
-    nav > ul {
-        width: 35rem;
-    }
     .rendered-markdown > h2 {
         font-size: 1.5rem;
     }
+
     .rendered-markdown > h1 {
         font-size: 2rem;
     }
+
     h1 {
         font-size: 3.5rem;
     }
-    .text-content {
+
+    body > * {
         width: 35rem;
     }
 }
@@ -45,18 +46,26 @@ nav > ul {
     .rendered-markdown > h2 {
         font-size: 1.5rem;
     }
+
     .rendered-markdown > h1 {
         font-size: 2rem;
     }
+
     h1 {
         font-size: 3.5rem;
     }
+
     nav > ul {
         width: 55rem;
     }
-    .text-content {
+
+    body > * {
         width: 55rem;
     }
+}
+
+body > * {
+    margin: auto;
 }
 
 .text-content {
@@ -193,7 +202,7 @@ footer {
 #editor-tab {
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    flex-grow: 2;
 }
 
 #editor {
@@ -227,6 +236,10 @@ footer {
 
 .row {
     display: flex;
+}
+
+#commit-msg {
+    flex-grow: 1;
 }
 
 #notifications {
