@@ -27,7 +27,7 @@ rand = "0.7.3"
 regex = "1.3.9"
 rust-argon2 = "0.8.2"
 serde = { version = "1.0.114", features = ["derive"] }
-smallvec = "1.4.0"
+smallvec = "1.4.1"
 syntect = { version = "4.2.0", features = ["html"] }
 thiserror = "1.0.20"
 time = "0.2.16"
