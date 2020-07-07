@@ -36,6 +36,11 @@ impl<'a> Builder<'a> {
         self
     }
 
+    pub fn script_source(mut self, source: &'a str) -> Self {
+        self.script_sources.push(source);
+        self
+    }
+
     pub fn script_sources(mut self, sources: impl IntoIterator<Item = &'a str>) -> Self {
         self.script_sources.extend(sources);
         self
@@ -47,13 +52,12 @@ impl<'a> Builder<'a> {
     }
 
     pub fn build(self) -> warp::reply::with::WithHeader {
-        warp::reply::with::header(
-            "Content-Security-Policy",
-            create_directives(&[
-                ("script-src", &self.script_sources),
-                ("style-src", &self.style_sources),
-                ("worker-src", &self.worker_sources),
-            ]),
-        )
+        let csp_string = create_directives(&[
+            ("script-src", &self.script_sources),
+            ("style-src", &self.style_sources),
+            ("worker-src", &self.worker_sources),
+        ]);
+        tracing::info!("csp: {}", csp_string);
+        warp::reply::with::header("Content-Security-Policy", csp_string)
     }
 }

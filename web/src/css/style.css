@@ -1,3 +1,6 @@
+@import "~normalize.css/normalize.css";
+@import "skeleton.css";
+
 body {
     display: flex;
     flex-direction: column;
@@ -53,6 +56,7 @@ nav > ul {
 }
 
 .text-content {
+    padding: 2rem;
     margin: auto;
 }
 
@@ -87,7 +91,6 @@ button {
 }
 */
 
-.button:hover,
 button:hover {
     background: lightgray;
 }
@@ -140,8 +143,7 @@ pre {
 }
 
 #search-submit {
-    background-image: linear-gradient(transparent, transparent),
-        url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%2213%22%3E %3Cg fill=%22none%22 stroke=%22%2354595d%22 stroke-width=%222%22%3E %3Cpath d=%22M11.29 11.71l-4-4%22/%3E %3Ccircle cx=%225%22 cy=%225%22 r=%224%22/%3E %3C/g%3E %3C/svg%3E");
+    background-image: linear-gradient(transparent, transparent), url("../img/search.svg");
     background-position: center center;
     background-repeat: no-repeat;
 }
@@ -264,8 +266,4 @@ footer {
     display: table-caption;
     caption-side: bottom;
     font-style: italic;
-}
-
-.rev {
-    font-family: Iosevka, Fira Mono, Monaco, monospace;
 }

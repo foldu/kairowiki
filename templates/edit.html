@@ -28,6 +28,11 @@
 {% endblock %}
 
 {% block end %}
-<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.19.2/min/vs/loader.js"></script>
-<script type="text/javascript" src="/static/js/edit.js"></script>
+<link rel="stylesheet" href="/static/editor.css">
+<script type="text/javascript" src="/static/editor.bundle.js"></script>
+<script type="text/javascript" src="/static/editor.worker.bundle.js"></script>
+<script type="text/javascript" src="/static/json.worker.bundle.js"></script>
+<script type="text/javascript" src="/static/css.worker.bundle.js"></script>
+<script type="text/javascript" src="/static/html.worker.bundle.js"></script>
+<script type="text/javascript" src="/static/ts.worker.bundle.js"></script>
 {% endblock %}

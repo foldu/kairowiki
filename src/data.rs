@@ -39,7 +39,7 @@ impl Data {
 
         let file_storage = migrations.run(file_storage).await?;
 
-        let theme_path = cfg.static_dir.join("css").join("hl.css");
+        let theme_path = cfg.static_dir.join("hl.css");
         Ok(Self(Arc::new(DataInner {
             repo,
             user_storage: Box::new(user_storage),
@@ -55,7 +55,7 @@ impl Data {
         Wiki {
             name: &self.config.wiki_name,
             footer: &self.config.footer,
-            logo: "/static/img/logo.svg",
+            logo: "/static/logo.svg",
         }
     }
 
@@ -136,6 +136,9 @@ pub struct Config {
 
     #[serde(default = "default_mime_types")]
     pub allowed_mime_types: crate::serde::SeparatedList<mime::Mime>,
+
+    #[serde(default)]
+    pub dangerously_allow_script_eval_for_development_only: bool,
 }
 
 fn tru() -> bool {

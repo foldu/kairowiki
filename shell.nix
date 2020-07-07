@@ -10,6 +10,7 @@ pkgs.mkShell rec {
     openssl
     pkg-config
     sqlite
+    yarn
   ];
   MIME_TYPES_PATH = "${pkgs.mime-types}/etc/mime.types";
 }
