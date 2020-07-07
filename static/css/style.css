@@ -265,3 +265,7 @@ footer {
     caption-side: bottom;
     font-style: italic;
 }
+
+.rev {
+    font-family: Iosevka, Fira Mono, Monaco, monospace;
+}
