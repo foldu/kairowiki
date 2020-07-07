@@ -4,6 +4,7 @@
 body {
     display: flex;
     flex-direction: column;
+    justify-content: center;
 }
 
 nav > ul {
@@ -11,48 +12,60 @@ nav > ul {
     justify-content: space-between;
     align-items: center;
     list-style-type: none;
-    margin: auto;
 }
 
 @media (min-width: 20rem) {
     nav > ul {
         width: 15rem;
     }
-    .text-content {width: 15rem; }
+
+    body > * {
+        width: 15rem;
+    }
 }
 
 @media (min-width: 40rem) {
-    nav > ul {
-        width: 35rem;
-    }
     .rendered-markdown > h2 {
         font-size: 1.5rem;
     }
+
     .rendered-markdown > h1 {
         font-size: 2rem;
     }
+
     h1 {
         font-size: 3.5rem;
     }
-    .text-content {width: 35rem; }
+
+    body > * {
+        width: 35rem;
+    }
 }
 
 @media (min-width: 60rem) {
     .rendered-markdown > h2 {
         font-size: 1.5rem;
     }
+
     .rendered-markdown > h1 {
         font-size: 2rem;
     }
+
     h1 {
         font-size: 3.5rem;
     }
+
     nav > ul {
         width: 55rem;
     }
-    .text-content {
+
+    body > * {
         width: 55rem;
     }
+}
+
+body > * {
+    margin: auto;
 }
 
 .text-content {
@@ -143,7 +156,8 @@ pre {
 }
 
 #search-submit {
-    background-image: linear-gradient(transparent, transparent), url("../img/search.svg");
+    background-image: linear-gradient(transparent, transparent),
+        url("../img/search.svg");
     background-position: center center;
     background-repeat: no-repeat;
 }
@@ -188,7 +202,7 @@ footer {
 #editor-tab {
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    flex-grow: 2;
 }
 
 #editor {
@@ -222,6 +236,10 @@ footer {
 
 .row {
     display: flex;
+}
+
+#commit-msg {
+    flex-grow: 1;
 }
 
 #notifications {
@@ -266,4 +284,8 @@ footer {
     display: table-caption;
     caption-side: bottom;
     font-style: italic;
+}
+
+.rev {
+    font-family: Iosevka, Fira Mono, Monaco, monospace;
 }
