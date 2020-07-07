@@ -141,8 +141,10 @@ function addFileInput(model: Model) {
 
         const body = await resp.json();
 
+        fileInput.remove();
+
         listElt.append(
-            $e("a", { href: body.url, textContent: body.url }),
+            $e("a", { href: body.url }, [$e("img", { src: body.url })]),
             $e("button", {
                 onclick: () => insertImageLink(model.activeEditor, body.url),
                 textContent: "Insert markdown",

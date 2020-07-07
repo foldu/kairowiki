@@ -219,12 +219,20 @@ footer {
 
 #file-list {
     list-style-type: none;
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    /*flex-direction: column; */
 }
 
 #file-list > li {
     display: flex;
+    padding: 2px;
+    height: 50px;
+}
+
+#file-list > li img {
+    max-height: 50px;
+    object-fit: fill;
 }
 
 #diff-view {
