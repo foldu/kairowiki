@@ -1,5 +1,4 @@
 use crate::user_storage::{UserAccount, UserId};
-use futures_util::TryFutureExt;
 use std::{collections::BTreeMap, sync::Arc, time::Duration};
 use time::OffsetDateTime;
 use tokio::{stream::StreamExt, sync::RwLock};
@@ -184,7 +183,7 @@ pub fn login_required(
         .and_then(move |path: warp::path::FullPath, cookie: Option<String>| {
             let sessions = sessions.clone();
             async move {
-                get_session(sessions, &path, cookie)
+                get_session(sessions, cookie)
                     .await
                     .and_then(|acc| {
                         acc.ok_or_else(|| Error::SessionRequired {
@@ -202,10 +201,10 @@ pub fn login_optional(
     use warp::Filter;
     warp::path::full()
         .and(warp::filters::cookie::optional(COOKIE_NAME))
-        .and_then(move |path: warp::path::FullPath, cookie: Option<String>| {
+        .and_then(move |_path: warp::path::FullPath, cookie: Option<String>| {
             let sessions = sessions.clone();
             async move {
-                get_session(sessions, &path, cookie)
+                get_session(sessions, cookie)
                     .await
                     .map_err(warp::reject::custom)
             }
@@ -214,10 +213,8 @@ pub fn login_optional(
 
 async fn get_session(
     sessions: Sessions,
-    path: &warp::path::FullPath,
     cookie: Option<String>,
 ) -> Result<Option<UserAccount>, Error> {
-    let path = path.as_str();
     match cookie {
         Some(cookie) => {
             let session_id = Uuid::parse_str(&cookie)?;
@@ -225,9 +222,6 @@ async fn get_session(
         }
         None => Ok(None),
     }
-    //.ok_or_else(|| Error::SessionRequired {
-    //    access_url: path.to_owned(),
-    //})
 }
 
 pub struct LoginSession {

@@ -52,7 +52,7 @@ impl<'a> RepoLock<'a> {
         &self,
         article: &WikiArticle,
         account: &UserAccount,
-        edit: EditSubmit,
+        edit: &EditSubmit,
     ) -> Result<api::Commit, super::Error> {
         let tree_path = self.path.tree_path(&article.path);
 
@@ -119,3 +119,4 @@ impl<'a> RepoLock<'a> {
         }
     }
 }
+

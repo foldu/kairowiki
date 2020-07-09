@@ -22,8 +22,24 @@ pub async fn edit_submit(
 ) -> Result<impl warp::Reply, warp::Rejection> {
     let repo = data.repo.write().await;
 
-    let resp = tokio::task::block_in_place(move || repo.commit_article(&article, &account, edit))
+    let resp = tokio::task::block_in_place(|| repo.commit_article(&article, &account, &edit))
         .map_err(warp::reject::custom)?;
+
+    match resp {
+        crate::api::Commit::NoConflict => {
+            let mut writer = data.index.writer.lock().await;
+            // FIXME:
+            tokio::task::block_in_place(|| {
+                crate::search::update_article(
+                    &data.index.schema,
+                    &mut writer,
+                    &article.title,
+                    &edit.markdown,
+                )
+            });
+        }
+        _ => (),
+    }
 
     Ok(warp::reply::json(&resp))
 }

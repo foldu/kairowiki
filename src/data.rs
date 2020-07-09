@@ -2,14 +2,18 @@ use crate::{
     file_storage::{self, FileStorage},
     git::Repo,
     markdown::MarkdownRenderer,
+    search,
     serde::SeparatedList,
     user_storage::{self, UserAccount},
 };
+use anyhow::Context;
 use std::{
     net::{IpAddr, Ipv4Addr},
     path::{Path, PathBuf},
     sync::Arc,
 };
+use tantivy::{IndexReader, IndexWriter};
+use tokio::sync::Mutex;
 
 #[derive(derive_more::Deref, Clone)]
 pub struct Data(Arc<DataInner>);
@@ -40,8 +44,21 @@ impl Data {
         let file_storage = migrations.run(file_storage).await?;
 
         let theme_path = cfg.static_dir.join("hl.css");
+
+        let (schema, reader, mut writer) =
+            crate::search::open_index(&cfg.index_dir).context("Can't set up search index")?;
+
+        crate::search::reindex(&cfg.git_repo, &schema, &mut writer)?;
+
+        let index = Index {
+            reader,
+            writer: Mutex::new(writer),
+            schema,
+        };
+
         Ok(Self(Arc::new(DataInner {
             repo,
+            index,
             user_storage: Box::new(user_storage),
             file_storage,
             markdown_renderer: MarkdownRenderer::new(&cfg.syntax_theme_name, theme_path)?,
@@ -78,12 +95,19 @@ fn mkdir_p(path: impl AsRef<Path>) -> Result<(), anyhow::Error> {
     }
 }
 
+pub struct Index {
+    pub reader: IndexReader,
+    pub writer: Mutex<IndexWriter>,
+    pub schema: search::Schema,
+}
+
 pub struct DataInner {
     pub user_storage: Box<dyn crate::user_storage::UserStorage>,
     pub config: Config,
     pub file_storage: crate::file_storage::FileStorage,
     pub markdown_renderer: MarkdownRenderer,
     pub repo: Repo,
+    pub index: Index,
 }
 
 pub struct Wiki<'a> {
@@ -141,6 +165,9 @@ pub struct Config {
 
     #[serde(default)]
     pub dangerously_allow_script_eval_for_development_only: bool,
+
+    #[serde(default = "default_index_dir")]
+    pub index_dir: PathBuf,
 }
 
 fn tru() -> bool {
@@ -203,5 +230,9 @@ fn default_mime_types() -> SeparatedList<mime::Mime> {
         mime::IMAGE_SVG,
         "image/webp".parse().unwrap(),
     ])
+}
+
+fn default_index_dir() -> PathBuf {
+    PathBuf::from("/data/index")
 }
 
