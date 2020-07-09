@@ -92,18 +92,6 @@ body > * {
     margin-bottom: 0.5rem;
 }
 
-/*
-button {
-    border: 1px solid;
-    color: black;
-    background: #f0f0f0;
-    padding: 1em 1em;
-    text-align: center;
-    text-decoration: none;
-    display: inline-block;
-}
-*/
-
 button:hover {
     background: lightgray;
 }
