@@ -30,7 +30,7 @@ pub async fn edit_submit(
             let mut writer = data.index.writer.lock().await;
             // FIXME:
             tokio::task::block_in_place(|| {
-                crate::search::update_article(
+                crate::index::update_article(
                     &data.index.schema,
                     &mut writer,
                     &article.title,

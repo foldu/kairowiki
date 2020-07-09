@@ -1,8 +1,8 @@
 use crate::{
     file_storage::{self, FileStorage},
     git::Repo,
+    index,
     markdown::MarkdownRenderer,
-    search,
     serde::SeparatedList,
     user_storage::{self, UserAccount},
 };
@@ -46,9 +46,9 @@ impl Data {
         let theme_path = cfg.static_dir.join("hl.css");
 
         let (schema, reader, mut writer) =
-            crate::search::open_index(&cfg.index_dir).context("Can't set up search index")?;
+            index::open(&cfg.index_dir).context("Can't set up search index")?;
 
-        crate::search::reindex(&cfg.git_repo, &schema, &mut writer)?;
+        crate::index::rebuild(&cfg.git_repo, &schema, &mut writer)?;
 
         let index = Index {
             reader,
@@ -98,7 +98,7 @@ fn mkdir_p(path: impl AsRef<Path>) -> Result<(), anyhow::Error> {
 pub struct Index {
     pub reader: IndexReader,
     pub writer: Mutex<IndexWriter>,
-    pub schema: search::Schema,
+    pub schema: index::Schema,
 }
 
 pub struct DataInner {

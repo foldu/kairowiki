@@ -12,7 +12,7 @@ mod handlers;
 mod markdown;
 mod migrations;
 mod relative_url;
-mod search;
+mod index;
 mod serde;
 mod session;
 mod sqlite;

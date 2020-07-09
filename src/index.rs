@@ -12,7 +12,7 @@ pub struct Schema {
     pub content: Field,
 }
 
-pub fn open_index(
+pub fn open(
     index_path: impl AsRef<Path>,
 ) -> Result<(Schema, IndexReader, IndexWriter), tantivy::TantivyError> {
     let index_path = index_path.as_ref();
@@ -45,7 +45,7 @@ pub enum Error {
 }
 
 // TODO: handle inconsistent indexes
-pub fn reindex(
+pub fn rebuild(
     repo: impl AsRef<Path>,
     schema: &Schema,
     writer: &mut IndexWriter,
