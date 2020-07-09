@@ -5,6 +5,8 @@ use crate::serde::Oid;
 pub enum Commit {
     Merged { merged: String, oid: Oid, rev: Oid },
 
+    Conflict { original: String, modified: String },
+
     NoConflict,
 }
 
@@ -36,3 +38,4 @@ pub struct EditSubmit {
 pub struct RenderedMarkdown {
     pub rendered: String,
 }
+

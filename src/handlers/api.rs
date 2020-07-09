@@ -2,12 +2,12 @@ use crate::{
     api::{EditSubmit, PreviewMarkdown, RenderedMarkdown},
     article::WikiArticle,
     data::Data,
-    user_storage::UserId,
+    user_storage::UserAccount,
 };
 
 pub async fn preview(
     data: Data,
-    _user_id: UserId,
+    _account: UserAccount,
     request: PreviewMarkdown,
 ) -> Result<impl warp::Reply, warp::Rejection> {
     let md = data.markdown_renderer.render(&request.markdown);
@@ -17,15 +17,9 @@ pub async fn preview(
 pub async fn edit_submit(
     data: Data,
     article: WikiArticle,
-    user_id: UserId,
+    account: UserAccount,
     edit: EditSubmit,
 ) -> Result<impl warp::Reply, warp::Rejection> {
-    let account = data
-        .user_storage
-        .fetch_account(user_id)
-        .await
-        .map_err(warp::reject::custom)?;
-
     let repo = data.repo.write().await;
 
     let resp = tokio::task::block_in_place(move || repo.commit_article(&article, &account, edit))
@@ -58,3 +52,4 @@ pub async fn article_info(
         rev: crate::serde::Oid(info.1),
     }))
 }
+

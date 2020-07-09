@@ -37,12 +37,14 @@ async fn run() -> Result<(), anyhow::Error> {
     let form_size_limit = warp::body::content_length_limit(1 << 10);
     let sessions = session::Sessions::new(std::time::Duration::from_secs(5 * 60));
     let login_required = session::login_required(sessions.clone());
+    let login_optional = session::login_optional(sessions.clone());
     let sessions = warp::any().map(move || sessions.clone());
 
     let root = warp::get().and(warp::path::end());
 
     let search = warp::path!("search")
         .and(data_filter.clone())
+        .and(login_optional.clone())
         .and(warp::query())
         .and_then(handlers::search::search_repo);
 
@@ -60,6 +62,7 @@ async fn run() -> Result<(), anyhow::Error> {
 
     let wiki_entries = wiki
         .and(wiki_route.clone())
+        .and(login_optional.clone())
         .and(warp::query())
         .and_then(handlers::wiki::show_entry);
 
@@ -74,17 +77,20 @@ async fn run() -> Result<(), anyhow::Error> {
     let history = warp::path("history")
         .and(warp::get())
         .and(wiki_route)
+        .and(login_optional.clone())
         .and_then(handlers::wiki::history);
 
     let register_path = warp::path!("register");
     let register_form = register_path
         .and(warp::get())
         .and(data_filter.clone())
+        .and(login_optional.clone())
         .and_then(handlers::auth::register_form);
     let register_post = register_path
         .and(warp::post())
         .and(data_filter.clone())
         .and(form_size_limit)
+        .and(login_optional.clone())
         .and(warp::filters::body::form())
         .and_then(handlers::auth::register);
 
@@ -92,10 +98,12 @@ async fn run() -> Result<(), anyhow::Error> {
     let login_form = login_path
         .and(warp::get())
         .and(data_filter.clone())
+        .and(login_optional.clone())
         .and_then(handlers::auth::login_form);
     let login_post = login_path
         .and(warp::post())
         .and(data_filter.clone())
+        .and(login_optional)
         .and(sessions.clone())
         .and(form_size_limit)
         .and(warp::filters::body::form())
@@ -239,3 +247,4 @@ fn main() {
         std::process::exit(1);
     }
 }
+

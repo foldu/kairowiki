@@ -33,9 +33,13 @@ pub struct Login<'a> {
 }
 
 impl<'a> Login<'a> {
-    pub fn new(data: &'a crate::data::Data, error: Option<&'a str>) -> Self {
+    pub fn new(
+        data: &'a crate::data::Data,
+        account: &'a Option<crate::user_storage::UserAccount>,
+        error: Option<&'a str>,
+    ) -> Self {
         Login {
-            wiki: data.wiki(),
+            wiki: data.wiki(account),
             registration_enabled: data.registration_possible(),
             error,
         }
@@ -127,3 +131,4 @@ impl<'a> Error<'a> {
         }
     }
 }
+

@@ -220,7 +220,7 @@ footer {
 #file-list {
     list-style-type: none;
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     /*flex-direction: column; */
 }
 
@@ -300,3 +300,14 @@ footer {
 .rev {
     font-family: Iosevka, Fira Mono, Monaco, monospace;
 }
+
+#user-status {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+#user-status > * {
+    padding-left: 4px;
+}
+

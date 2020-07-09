@@ -1,4 +1,4 @@
-use crate::{article::WikiArticle, data::Data, serde::Oid, templates, user_storage::UserId};
+use crate::{article::WikiArticle, data::Data, serde::Oid, templates, user_storage::UserAccount};
 use warp::{
     reject::{self, Rejection},
     Reply,
@@ -12,6 +12,7 @@ pub struct EntryQuery {
 pub async fn show_entry(
     data: Data,
     article: WikiArticle,
+    account: Option<UserAccount>,
     query: EntryQuery,
 ) -> Result<impl Reply, Rejection> {
     // TODO: add rendering cache
@@ -42,29 +43,34 @@ pub async fn show_entry(
     Ok(render!(templates::WikiPage {
         title: &article.title,
         content: &body,
-        wiki: data.wiki(),
+        wiki: data.wiki(&account),
     }))
 }
 
 pub async fn edit(
     data: Data,
     article: WikiArticle,
-    _user_id: UserId,
+    account: UserAccount,
 ) -> Result<impl Reply, Rejection> {
     Ok(render!(templates::WikiEdit {
-        wiki: data.wiki(),
+        wiki: data.wiki(&Some(account)),
         title: article.title.as_ref()
     }))
 }
 
-pub async fn history(data: Data, article: WikiArticle) -> Result<impl Reply, Rejection> {
+pub async fn history(
+    data: Data,
+    article: WikiArticle,
+    account: Option<UserAccount>,
+) -> Result<impl Reply, Rejection> {
     let history =
         tokio::task::block_in_place(|| data.repo.read().and_then(|repo| repo.history(&article)))
             .map_err(warp::reject::custom)?;
 
     Ok(render!(templates::History {
-        wiki: data.wiki(),
+        wiki: data.wiki(&account),
         title: article.title.as_ref(),
         history: &history,
     }))
 }
+

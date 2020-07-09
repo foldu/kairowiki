@@ -12,6 +12,23 @@
 </head>
 
 <body>
+  <div id="user-status">
+    {% match wiki.login_status %}
+    {% when Some with(account) %}
+    <div>
+      Logged in as: {{ account.name }}
+    </div>
+    <div>
+      <form method="POST" action="/logout">
+        <button type="submit">Logout</button>
+      </form>
+    </div>
+    {% when None %}
+    <div>
+      <a href="/login">Login</a>
+    </div>
+    {% endmatch %}
+  </div>
   <nav>
     <ul>
       <li>

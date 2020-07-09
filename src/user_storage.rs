@@ -11,15 +11,15 @@ pub trait UserStorage: Sync + Send {
         Err(Error::RegistrationUnsupported)
     }
 
-    async fn check_credentials(&self, name: &str, pass: &str) -> Result<UserId, Error>;
-
-    async fn fetch_account(&self, id: UserId) -> Result<UserAccount, Error>;
+    async fn check_credentials(&self, name: &str, pass: &str) -> Result<UserAccount, Error>;
 }
 
 #[derive(Debug, Clone, Copy, PartialOrd, Ord, Eq, PartialEq)]
 pub struct UserId(i32);
 
+#[derive(Clone)]
 pub struct UserAccount {
+    pub id: UserId,
     pub name: String,
     pub email: String,
 }
@@ -46,3 +46,4 @@ pub enum Error {
 }
 
 impl warp::reject::Reject for Error {}
+

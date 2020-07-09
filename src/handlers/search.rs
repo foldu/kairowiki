@@ -1,4 +1,4 @@
-use crate::{article::ArticleTitle, data::Data, templates};
+use crate::{article::ArticleTitle, data::Data, templates, user_storage::UserAccount};
 use std::{
     fs::Metadata,
     path::{Path, PathBuf},
@@ -44,6 +44,7 @@ pub struct SearchQuery {
 
 pub async fn search_repo(
     data: Data,
+    account: Option<UserAccount>,
     query: SearchQuery,
 ) -> Result<impl warp::Reply, std::convert::Infallible> {
     // unwrap ok because query is escaped
@@ -64,7 +65,8 @@ pub async fn search_repo(
 
     Ok(render!(templates::SearchResults {
         query: &query.query,
-        wiki: data.wiki(),
+        wiki: data.wiki(&account),
         results: &found,
     }))
 }
+

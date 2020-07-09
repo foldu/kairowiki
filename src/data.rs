@@ -3,7 +3,7 @@ use crate::{
     git::Repo,
     markdown::MarkdownRenderer,
     serde::SeparatedList,
-    user_storage,
+    user_storage::{self, UserAccount},
 };
 use std::{
     net::{IpAddr, Ipv4Addr},
@@ -51,8 +51,9 @@ impl Data {
 }
 
 impl Data {
-    pub fn wiki(&self) -> Wiki {
+    pub fn wiki<'a>(&'a self, account: &'a Option<UserAccount>) -> Wiki {
         Wiki {
+            login_status: account.into(),
             name: &self.config.wiki_name,
             footer: &self.config.footer,
             logo: "/static/logo.svg",
@@ -89,6 +90,7 @@ pub struct Wiki<'a> {
     pub name: &'a str,
     pub footer: &'a str,
     pub logo: &'a str,
+    pub login_status: &'a Option<UserAccount>,
 }
 
 #[derive(serde::Deserialize)]
@@ -202,3 +204,4 @@ fn default_mime_types() -> SeparatedList<mime::Mime> {
         "image/webp".parse().unwrap(),
     ])
 }
+

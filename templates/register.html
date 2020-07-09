@@ -1,7 +1,7 @@
 {% extends "generic.html" %}
 
 {% block content %}
-<form action="/register" method="POST" class="flex-centered">
+<form action="/register" method="POST">
   {% match error %}
     {% when Some with (error) %}
       {{ error }}

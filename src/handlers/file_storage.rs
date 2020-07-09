@@ -38,7 +38,7 @@ async fn upload_(
 
 pub async fn upload(
     data: Data,
-    _: crate::user_storage::UserId,
+    _: crate::user_storage::UserAccount,
     form: warp::filters::multipart::FormData,
 ) -> Result<impl warp::Reply, warp::Rejection> {
     #[derive(serde::Serialize)]
@@ -48,3 +48,4 @@ pub async fn upload(
     let url = upload_(data, form).await.map_err(warp::reject::custom)?;
     Ok(warp::reply::json(&Reply { url: url.as_ref() }))
 }
+
