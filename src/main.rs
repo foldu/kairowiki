@@ -3,16 +3,16 @@
 mod macros;
 mod api;
 mod article;
+mod context;
 mod csp;
-mod data;
 mod file_storage;
 mod forms;
 mod git;
 mod handlers;
+mod index;
 mod markdown;
 mod migrations;
 mod relative_url;
-mod index;
 mod serde;
 mod session;
 mod sqlite;
@@ -30,11 +30,11 @@ async fn run() -> Result<(), anyhow::Error> {
     init_logging();
 
     // FIXME: clean this up
-    let data = data::Data::from_env().await?;
-    let static_ = warp::path("static").and(warp::fs::dir(data.config.static_dir.clone()));
+    let ctx = context::Context::from_env().await?;
+    let static_ = warp::path("static").and(warp::fs::dir(ctx.config.static_dir.clone()));
 
-    let data_ = data.clone();
-    let data_filter = warp::any().map(move || data_.clone());
+    let ctx_ = ctx.clone();
+    let ctx_filter = warp::any().map(move || ctx_.clone());
     let form_size_limit = warp::body::content_length_limit(1 << 10);
     let sessions = session::Sessions::new(std::time::Duration::from_secs(5 * 60));
     let login_required = session::login_required(sessions.clone());
@@ -44,22 +44,22 @@ async fn run() -> Result<(), anyhow::Error> {
     let root = warp::get().and(warp::path::end());
 
     let search = warp::path!("search")
-        .and(data_filter.clone())
+        .and(ctx_filter.clone())
         .and(login_optional.clone())
         .and(warp::query())
         .and_then(handlers::search::search_repo);
 
     let home_url =
-        warp::http::Uri::from_maybe_shared(format!("/wiki/{}", data.config.home_wiki_page.clone()))
+        warp::http::Uri::from_maybe_shared(format!("/wiki/{}", ctx.config.home_wiki_page.clone()))
             .unwrap();
     let home = root.map(move || warp::redirect(home_url.clone()));
 
     let wiki = warp::get().and(warp::path("wiki"));
-    let wiki_article = crate::article::wiki_article(data.clone());
+    let wiki_article = crate::article::wiki_article(ctx.clone());
     let wiki_home = wiki
         .and(warp::path::end())
         .map(|| warp::redirect(Uri::from_static("/")));
-    let wiki_route = data_filter.clone().and(wiki_article.clone());
+    let wiki_route = ctx_filter.clone().and(wiki_article.clone());
 
     let wiki_entries = wiki
         .and(wiki_route.clone())
@@ -84,12 +84,12 @@ async fn run() -> Result<(), anyhow::Error> {
     let register_path = warp::path!("register");
     let register_form = register_path
         .and(warp::get())
-        .and(data_filter.clone())
+        .and(ctx_filter.clone())
         .and(login_optional.clone())
         .and_then(handlers::auth::register_form);
     let register_post = register_path
         .and(warp::post())
-        .and(data_filter.clone())
+        .and(ctx_filter.clone())
         .and(form_size_limit)
         .and(login_optional.clone())
         .and(warp::filters::body::form())
@@ -98,12 +98,12 @@ async fn run() -> Result<(), anyhow::Error> {
     let login_path = warp::path!("login");
     let login_form = login_path
         .and(warp::get())
-        .and(data_filter.clone())
+        .and(ctx_filter.clone())
         .and(login_optional.clone())
         .and_then(handlers::auth::login_form);
     let login_post = login_path
         .and(warp::post())
-        .and(data_filter.clone())
+        .and(ctx_filter.clone())
         .and(login_optional)
         .and(sessions.clone())
         .and(form_size_limit)
@@ -119,13 +119,13 @@ async fn run() -> Result<(), anyhow::Error> {
     let file_storage = warp::path("storage");
     let upload = file_storage
         .and(warp::put())
-        .and(data_filter.clone())
+        .and(ctx_filter.clone())
         .and(login_required.clone())
         .and(warp::filters::multipart::form().max_length(5 * (1 << 20)))
         .and_then(handlers::file_storage::upload);
     let serve_files = file_storage
         .and(warp::get())
-        .and(warp::fs::dir(data.config.storage_path.clone()));
+        .and(warp::fs::dir(ctx.config.storage_path.clone()));
 
     let api = warp::path("api");
     let put_api = api
@@ -133,20 +133,20 @@ async fn run() -> Result<(), anyhow::Error> {
         .and(warp::put());
     let preview = put_api
         .and(warp::path!("preview"))
-        .and(data_filter.clone())
+        .and(ctx_filter.clone())
         .and(login_required.clone())
         .and(warp::body::json())
         .and_then(handlers::api::preview);
     let edit_submit = put_api
         .and(warp::path("edit"))
-        .and(data_filter.clone())
+        .and(ctx_filter.clone())
         .and(wiki_article.clone())
         .and(login_required.clone())
         .and(warp::body::json())
         .and_then(handlers::api::edit_submit);
     let article_info = api
         .and(warp::path("article_info"))
-        .and(data_filter.clone())
+        .and(ctx_filter.clone())
         .and(wiki_article.clone())
         .and(warp::get())
         .and_then(handlers::api::article_info);
@@ -172,8 +172,8 @@ async fn run() -> Result<(), anyhow::Error> {
     };
     //let routes = routes.or();
 
-    let domain = data.config.domain.as_ref().cloned().unwrap_or_else(|| {
-        url::Url::parse(&format!("http://localhost:{}", data.config.port)).unwrap()
+    let domain = ctx.config.domain.as_ref().cloned().unwrap_or_else(|| {
+        url::Url::parse(&format!("http://localhost:{}", ctx.config.port)).unwrap()
     });
 
     let cors = warp::cors()
@@ -183,7 +183,7 @@ async fn run() -> Result<(), anyhow::Error> {
         .build();
 
     let mut script_sources = vec![domain.as_str()];
-    if data
+    if ctx
         .config
         .dangerously_allow_script_eval_for_development_only
     {
@@ -207,7 +207,7 @@ async fn run() -> Result<(), anyhow::Error> {
         stream::select(term, int).next().await;
     };
 
-    let addr = std::net::SocketAddr::new(data.config.ip_addr, data.config.port);
+    let addr = std::net::SocketAddr::new(ctx.config.ip_addr, ctx.config.port);
     let (_, server) = warp::serve(routes).bind_with_graceful_shutdown(addr, shutdown);
 
     tracing::info!("Listening on http://{}", addr);

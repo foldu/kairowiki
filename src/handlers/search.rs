@@ -1,4 +1,4 @@
-use crate::{data::Data, templates, user_storage::UserAccount};
+use crate::{context::Context, templates, user_storage::UserAccount};
 use tantivy::{collector::TopDocs, query::QueryParser};
 
 #[derive(serde::Deserialize)]
@@ -7,14 +7,14 @@ pub struct SearchQuery {
 }
 
 pub async fn search_repo(
-    data: Data,
+    ctx: Context,
     account: Option<UserAccount>,
     search_query: SearchQuery,
 ) -> Result<impl warp::Reply, std::convert::Infallible> {
-    let searcher = tokio::task::block_in_place(|| data.index.reader.searcher());
+    let searcher = tokio::task::block_in_place(|| ctx.index.reader.searcher());
 
-    let title = data.index.schema.title;
-    let content = data.index.schema.content;
+    let title = ctx.index.schema.title;
+    let content = ctx.index.schema.content;
     let query = QueryParser::for_index(searcher.index(), vec![title, content])
         .parse_query(&search_query.query)
         // FIXME: decide what to do if query is malformed
@@ -32,7 +32,7 @@ pub async fn search_repo(
 
     Ok(render!(templates::SearchResults {
         query: &search_query.query,
-        wiki: data.wiki(&account),
+        wiki: ctx.wiki(&account),
         results: &found,
     }))
 }

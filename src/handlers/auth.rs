@@ -1,5 +1,5 @@
 use crate::{
-    data::Data,
+    context::Context,
     forms,
     session::Sessions,
     templates,
@@ -8,12 +8,12 @@ use crate::{
 use warp::{http::StatusCode, reject, Rejection, Reply};
 
 pub async fn register_form(
-    data: Data,
+    ctx: Context,
     account: Option<UserAccount>,
 ) -> Result<impl Reply, Rejection> {
     // TODO: better error message about registration being disabled/not supported
-    Ok(if data.registration_possible() {
-        render!(templates::Register::new(data.wiki(&account)))
+    Ok(if ctx.registration_possible() {
+        render!(templates::Register::new(ctx.wiki(&account)))
     } else {
         render!(
             warp::http::StatusCode::NOT_IMPLEMENTED,
@@ -23,11 +23,11 @@ pub async fn register_form(
 }
 
 pub async fn register(
-    data: Data,
+    ctx: Context,
     account: Option<UserAccount>,
     form: forms::Register,
 ) -> Result<impl Reply, Rejection> {
-    if !data.registration_possible() {
+    if !ctx.registration_possible() {
         // TODO: same as in register_form
         return Ok(render!(
             warp::http::StatusCode::NOT_IMPLEMENTED,
@@ -35,8 +35,8 @@ pub async fn register(
         ));
     }
 
-    let wiki = data.wiki(&account);
-    match data.user_storage.register(&form).await {
+    let wiki = ctx.wiki(&account);
+    match ctx.user_storage.register(&form).await {
         Err(user_storage::Error::UserExists) => Ok(render!(
             StatusCode::CONFLICT,
             templates::Register::error(wiki, "User exists")
@@ -52,12 +52,12 @@ pub async fn register(
 }
 
 pub async fn login_form(
-    data: Data,
+    ctx: Context,
     account: Option<UserAccount>,
 ) -> Result<impl warp::Reply, Rejection> {
     Ok(render!(templates::Login {
-        wiki: data.wiki(&account),
-        registration_enabled: data.registration_possible(),
+        wiki: ctx.wiki(&account),
+        registration_enabled: ctx.registration_possible(),
         error: None
     }))
 }
@@ -68,14 +68,14 @@ pub struct LoginQuery {
 }
 
 pub async fn login(
-    data: Data,
+    ctx: Context,
     account: Option<UserAccount>,
     sessions: Sessions,
     form: forms::Login,
     login_query: LoginQuery,
 ) -> Result<impl warp::Reply, Rejection> {
     use crate::user_storage::Error::*;
-    let account = match data
+    let account = match ctx
         .user_storage
         .check_credentials(&form.name, &form.password)
         .await
@@ -85,7 +85,7 @@ pub async fn login(
                 .status(warp::http::StatusCode::FORBIDDEN)
                 .body(
                     askama::Template::render(&templates::Login::new(
-                        &data,
+                        &ctx,
                         &account,
                         Some(&e.to_string()),
                     ))

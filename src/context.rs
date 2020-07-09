@@ -6,7 +6,7 @@ use crate::{
     serde::SeparatedList,
     user_storage::{self, UserAccount},
 };
-use anyhow::Context;
+use anyhow::Context as AnyhowContext;
 use std::{
     net::{IpAddr, Ipv4Addr},
     path::{Path, PathBuf},
@@ -16,9 +16,9 @@ use tantivy::{IndexReader, IndexWriter};
 use tokio::sync::Mutex;
 
 #[derive(derive_more::Deref, Clone)]
-pub struct Data(Arc<DataInner>);
+pub struct Context(Arc<DataInner>);
 
-impl Data {
+impl Context {
     pub async fn from_env() -> Result<Self, anyhow::Error> {
         let cfg: Config = envy::from_env()?;
         mkdir_p(&cfg.git_repo)?;
@@ -67,7 +67,7 @@ impl Data {
     }
 }
 
-impl Data {
+impl Context {
     pub fn wiki<'a>(&'a self, account: &'a Option<UserAccount>) -> Wiki {
         Wiki {
             login_status: account.into(),
