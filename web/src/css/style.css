@@ -98,10 +98,12 @@ button:hover {
 
 button.tab {
     border: none;
+    border-bottom: 2px solid;
+    margin-bottom: 1rem;
 }
 
 button.tab.active {
-    border-bottom: 2px solid;
+    border-color: #1eaedb;
 }
 
 button.tab:focus {
