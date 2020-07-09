@@ -12,37 +12,22 @@
 </head>
 
 <body>
-  <div id="user-status">
+  <nav>
+    <a href="/">
+      <img src="{{wiki.logo}}" alt="logo" height="100px">
+    </a>
+    <form id="searchbox" method="GET" action="/search">
+      <input type="search" name="query" placeholder="Search">
+      <input type="submit" id="search-submit" value="">
+    </form>
     {% match wiki.login_status %}
     {% when Some with(account) %}
-    <div>
-      Logged in as: {{ account.name }}
-    </div>
-    <div>
-      <form method="POST" action="/logout">
-        <button type="submit">Logout</button>
-      </form>
-    </div>
+    <form method="POST" action="/logout">
+      <button type="submit">Logout</button>
+    </form>
     {% when None %}
-    <div>
-      <a href="/login">Login</a>
-    </div>
+    <a href="/login" class="button">Login</a>
     {% endmatch %}
-  </div>
-  <nav>
-    <ul>
-      <li>
-        <a href="/">
-          <img src="{{wiki.logo}}" alt="logo" height="100px">
-        </a>
-      </li>
-      <li>
-        <form id="searchbox" method="GET" action="/search">
-          <input type="search" name="query" placeholder="Search">
-          <input type="submit" id="search-submit" value="">
-        </form>
-      </li>
-    </ul>
   </nav>
   {% block content %} {% endblock %}
 
