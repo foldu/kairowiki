@@ -176,6 +176,6 @@ pub enum Error {
 fn can_find_mime_extensions() {
     let mime_path = std::env::var_os("MIME_TYPES_PATH")
         .map(std::path::PathBuf::from)
-        .unwrap_or_else(|| crate::data::default_mime_types_path());
+        .unwrap_or_else(|| crate::context::default_mime_types_path());
     find_mime_extensions(&mime_path, &[mime::IMAGE_JPEG]).unwrap();
 }
