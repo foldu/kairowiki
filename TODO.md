@@ -13,3 +13,4 @@
 - [x] isolate rendered markdown (csp should be ok enough?)
 - [x] get monaco web worker to work
 - [ ] json api errors for /api/*
+- [ ] Include git hook that tells the server to reindex after somebody pushed to the git repo
