@@ -36,6 +36,13 @@ pub async fn register(
     }
 
     let wiki = ctx.wiki(&account);
+    if form.password != form.password_check {
+        return Ok(render!(
+            StatusCode::BAD_REQUEST,
+            templates::Register::error(wiki, "Password repeat does not match password")
+        ));
+    }
+
     match ctx.user_storage.register(&form).await {
         Err(user_storage::Error::UserExists) => Ok(render!(
             StatusCode::CONFLICT,
