@@ -4,7 +4,7 @@ use tantivy::{
     directory::MmapDirectory,
     doc,
     schema::{Field, STORED, TEXT},
-    Index, IndexReader, IndexWriter, Term,
+    Index, IndexReader, IndexWriter, TantivyError, Term,
 };
 
 pub struct Schema {
@@ -12,12 +12,10 @@ pub struct Schema {
     pub content: Field,
 }
 
-pub fn open(
-    index_path: impl AsRef<Path>,
-) -> Result<(Schema, IndexReader, IndexWriter), tantivy::TantivyError> {
+pub fn open(index_path: impl AsRef<Path>) -> Result<(Schema, IndexReader, IndexWriter), Error> {
     let index_path = index_path.as_ref();
     std::fs::create_dir_all(index_path)?;
-    let dir = MmapDirectory::open(index_path)?;
+    let dir = MmapDirectory::open(index_path).map_err(TantivyError::from)?;
     let mut schema = tantivy::schema::Schema::builder();
     let title = schema.add_text_field("title", TEXT | STORED);
     let content = schema.add_text_field("content", TEXT | STORED);
@@ -38,10 +36,16 @@ pub fn open(
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
     #[error("Error from tantivy: {0}")]
-    Tantivy(#[from] tantivy::TantivyError),
+    Tantivy(tantivy::TantivyError),
 
     #[error("Error while trying to index repo: {0}")]
     RepoIndex(#[from] std::io::Error),
+}
+
+impl From<tantivy::TantivyError> for Error {
+    fn from(other: TantivyError) -> Self {
+        Error::Tantivy(other)
+    }
 }
 
 // TODO: handle inconsistent indexes

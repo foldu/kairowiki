@@ -15,7 +15,7 @@ let
         let
           basename = builtins.baseNameOf path;
         in
-          basename != "target" && basename != "data" && basename != web
+          basename != "target" && basename != "data" && basename != "web"
       )
     )
     ./.;
