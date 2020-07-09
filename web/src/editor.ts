@@ -1,10 +1,6 @@
 import * as monaco from "monaco-editor";
 import {
-    NoConflict,
-    Merged,
     EditSubmit,
-    Oid,
-    PreviewMarkdown,
     EditSubmitResponse,
     ArticleInfo,
     Model,
@@ -154,6 +150,7 @@ function addFileInput(model: Model) {
                 textContent: "Delete",
             }),
         );
+
         addFileInput(model);
     };
 
@@ -168,7 +165,7 @@ function addFileInput(model: Model) {
     document.querySelector("#file-list").append(listElt);
 }
 
-function switchTo(model: Model, targetButton: HTMLElement) {
+function switchTo(model: Model, targetButton: HTMLElement): boolean {
     const targetTab = model.tabs.get(targetButton);
     if (!targetTab.classList.contains("hidden")) {
         return false;
@@ -289,3 +286,4 @@ window.addEventListener("load", async () => {
         }
     });
 });
+
