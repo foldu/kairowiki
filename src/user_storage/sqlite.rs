@@ -69,11 +69,14 @@ impl super::UserStorage for SqliteStorage {
         let mut cxn = self.0.acquire().await?;
         let hash = PasswordHash::from_password(&info.password);
 
+        let name = &info.name;
+        let email = &info.email;
+        let hash = hash.as_ref();
         sqlx::query!(
             "INSERT INTO wiki_user(name, email, pass_hash) VALUES (?, ?, ?)",
-            &info.name,
-            &info.email,
-            hash.as_ref()
+            name,
+            email,
+            hash
         )
         .execute(&mut *cxn)
         .await?;

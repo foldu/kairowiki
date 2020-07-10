@@ -15,7 +15,7 @@ pub trait UserStorage: Sync + Send {
 }
 
 #[derive(Debug, Clone, Copy, PartialOrd, Ord, Eq, PartialEq)]
-pub struct UserId(i32);
+pub struct UserId(i64);
 
 #[derive(Clone)]
 pub struct UserAccount {

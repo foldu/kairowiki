@@ -59,9 +59,11 @@ impl FileStorage {
         let hash = tokio::task::block_in_place(|| blake3::hash(file));
         let mut cxn = self.pool.acquire().await.unwrap();
 
+        let hash_bytes = &hash.as_bytes()[..];
+
         let path = sqlx::query!(
             "SELECT relative_path FROM file_hash WHERE hash = ?",
-            &hash.as_bytes()[..]
+            hash_bytes
         )
         .fetch_optional(&mut *cxn)
         .await?
@@ -81,13 +83,13 @@ impl FileStorage {
                 sqlx::query!(
                     "INSERT INTO file_hash(relative_path, hash) VALUES (?, ?)",
                     relative_path,
-                    &hash.as_bytes()[..]
+                    hash_bytes
                 )
                 .execute(&mut *cxn)
                 .await?;
 
                 if let Err(e) = tokio::fs::write(&target, file).await {
-                    sqlx::query!("DELETE FROM file_hash WHERE hash = ?", &hash.as_bytes()[..])
+                    sqlx::query!("DELETE FROM file_hash WHERE hash = ?", hash_bytes)
                         .execute(&mut *cxn)
                         .await?;
 
@@ -179,3 +181,4 @@ fn can_find_mime_extensions() {
         .unwrap_or_else(|| crate::context::default_mime_types_path());
     find_mime_extensions(&mime_path, &[mime::IMAGE_JPEG]).unwrap();
 }
+

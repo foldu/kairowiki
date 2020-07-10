@@ -29,13 +29,13 @@ regex = "1.3.9"
 rust-argon2 = "0.8.2"
 serde = { version = "1.0.114", features = ["derive"] }
 serde_json = "1.0.56"
-smallvec = "1.4.0"
+smallvec = "1.4.1"
 syntect = { version = "4.2.0", features = ["html"] }
 tantivy = "0.12.0"
 thiserror = "1.0.20"
 time = "0.2.16"
 tokio = { version = "0.2.21", features = ["rt-threaded", "sync", "signal"] }
-tracing = "0.1.15"
+tracing = "0.1.16"
 tracing-futures = "0.2.4"
 tracing-subscriber = "0.2.7"
 tree_magic = "0.2.3"
@@ -47,6 +47,6 @@ warp = "0.2.3"
 
 [dependencies.sqlx]
 git = "https://github.com/launchbadge/sqlx"
-rev = "086dfec00288594359a07fb87f6b9536959542a2"
+rev = "c327e63f4675f9f6fae9125eb1fa4ce01632b061"
 default-features = false
 features = ["sqlite", "runtime-tokio", "macros", "offline"]
