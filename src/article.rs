@@ -86,10 +86,11 @@ pub enum Error {
 impl warp::reject::Reject for Error {}
 
 pub fn wiki_article(
-    data: crate::data::Data,
+    ctx: crate::context::Context,
 ) -> impl warp::Filter<Extract = (WikiArticle,), Error = std::convert::Infallible> + Clone {
     warp::path::tail().map(move |tail: warp::path::Tail| {
         let title = ArticleTitle::new(urlencoding::decode(tail.as_str()).unwrap());
-        WikiArticle::from_title(&data.config.git_repo, title)
+        WikiArticle::from_title(&ctx.config.git_repo, title)
     })
 }
+

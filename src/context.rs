@@ -1,20 +1,24 @@
 use crate::{
     file_storage::{self, FileStorage},
     git::Repo,
+    index,
     markdown::MarkdownRenderer,
     serde::SeparatedList,
-    user_storage,
+    user_storage::{self, UserAccount},
 };
+use anyhow::Context as AnyhowContext;
 use std::{
     net::{IpAddr, Ipv4Addr},
     path::{Path, PathBuf},
     sync::Arc,
 };
+use tantivy::{IndexReader, IndexWriter};
+use tokio::sync::Mutex;
 
 #[derive(derive_more::Deref, Clone)]
-pub struct Data(Arc<DataInner>);
+pub struct Context(Arc<DataInner>);
 
-impl Data {
+impl Context {
     pub async fn from_env() -> Result<Self, anyhow::Error> {
         let cfg: Config = envy::from_env()?;
         mkdir_p(&cfg.git_repo)?;
@@ -40,8 +44,21 @@ impl Data {
         let file_storage = migrations.run(file_storage).await?;
 
         let theme_path = cfg.static_dir.join("hl.css");
+
+        let (schema, reader, mut writer) =
+            index::open(&cfg.index_dir).context("Can't set up search index")?;
+
+        crate::index::rebuild(&cfg.git_repo, &schema, &mut writer)?;
+
+        let index = Index {
+            reader,
+            writer: Mutex::new(writer),
+            schema,
+        };
+
         Ok(Self(Arc::new(DataInner {
             repo,
+            index,
             user_storage: Box::new(user_storage),
             file_storage,
             markdown_renderer: MarkdownRenderer::new(&cfg.syntax_theme_name, theme_path)?,
@@ -50,9 +67,10 @@ impl Data {
     }
 }
 
-impl Data {
-    pub fn wiki(&self) -> Wiki {
+impl Context {
+    pub fn wiki<'a>(&'a self, account: &'a Option<UserAccount>) -> Wiki {
         Wiki {
+            login_status: account.into(),
             name: &self.config.wiki_name,
             footer: &self.config.footer,
             logo: "/static/logo.svg",
@@ -77,18 +95,26 @@ fn mkdir_p(path: impl AsRef<Path>) -> Result<(), anyhow::Error> {
     }
 }
 
+pub struct Index {
+    pub reader: IndexReader,
+    pub writer: Mutex<IndexWriter>,
+    pub schema: index::Schema,
+}
+
 pub struct DataInner {
     pub user_storage: Box<dyn crate::user_storage::UserStorage>,
     pub config: Config,
     pub file_storage: crate::file_storage::FileStorage,
     pub markdown_renderer: MarkdownRenderer,
     pub repo: Repo,
+    pub index: Index,
 }
 
 pub struct Wiki<'a> {
     pub name: &'a str,
     pub footer: &'a str,
     pub logo: &'a str,
+    pub login_status: &'a Option<UserAccount>,
 }
 
 #[derive(serde::Deserialize)]
@@ -139,6 +165,9 @@ pub struct Config {
 
     #[serde(default)]
     pub dangerously_allow_script_eval_for_development_only: bool,
+
+    #[serde(default = "default_index_dir")]
+    pub index_dir: PathBuf,
 }
 
 fn tru() -> bool {
@@ -202,3 +231,8 @@ fn default_mime_types() -> SeparatedList<mime::Mime> {
         "image/webp".parse().unwrap(),
     ])
 }
+
+fn default_index_dir() -> PathBuf {
+    PathBuf::from("/data/index")
+}
+

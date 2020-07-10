@@ -4,6 +4,7 @@ use serde::{
 };
 use std::{fmt::Display, marker::PhantomData, str::FromStr};
 
+#[derive(Copy, Clone)]
 pub struct Oid(pub git2::Oid);
 
 impl serde::Serialize for Oid {
@@ -98,3 +99,4 @@ fn roundtrip_oid() {
     let deserialized: Test = serde_json::from_str(&serialized).unwrap();
     assert_eq!(oid, deserialized.field.0);
 }
+

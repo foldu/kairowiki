@@ -1,41 +1,5 @@
-use crate::{article::ArticleTitle, data::Data, templates};
-use std::{
-    fs::Metadata,
-    path::{Path, PathBuf},
-};
-use tokio::stream::StreamExt;
-
-// would be nicer if this was a stream so I could just filter/map normally
-// but that's too annoying to implement
-async fn search<TryTransform, Ret>(root: PathBuf, mut try_transform: TryTransform) -> Vec<Ret>
-where
-    TryTransform: FnMut(&PathBuf, &Metadata) -> Option<Ret>,
-{
-    let mut ret = Vec::new();
-    let mut stack = vec![root];
-    while let Some(path) = stack.pop() {
-        if let Ok(meta) = tokio::fs::metadata(&path).await {
-            if let Some(elt) = try_transform(&path, &meta) {
-                ret.push(elt);
-            }
-            if meta.file_type().is_dir() {
-                append_entries(&path, &mut stack).await;
-            }
-        }
-    }
-
-    ret
-}
-
-async fn append_entries(path: impl AsRef<Path>, vec: &mut Vec<PathBuf>) {
-    if let Ok(mut read_dir) = tokio::fs::read_dir(path).await {
-        while let Some(ent) = read_dir.next().await {
-            if let Ok(ent) = ent {
-                vec.push(ent.path());
-            }
-        }
-    }
-}
+use crate::{context::Context, templates, user_storage::UserAccount};
+use tantivy::{collector::TopDocs, query::QueryParser};
 
 #[derive(serde::Deserialize)]
 pub struct SearchQuery {
@@ -43,28 +7,33 @@ pub struct SearchQuery {
 }
 
 pub async fn search_repo(
-    data: Data,
-    query: SearchQuery,
+    ctx: Context,
+    account: Option<UserAccount>,
+    search_query: SearchQuery,
 ) -> Result<impl warp::Reply, std::convert::Infallible> {
-    // unwrap ok because query is escaped
-    let re = regex::Regex::new(&format!("(?i){}", regex::escape(&query.query))).unwrap();
-    let found = search(data.config.git_repo.clone(), |path, meta| {
-        if meta.is_file() {
-            let title = ArticleTitle::from_path(&data.config.git_repo, path).ok()?;
-            if re.is_match(title.as_ref()) {
-                Some(title)
-            } else {
-                None
-            }
-        } else {
-            None
-        }
-    })
-    .await;
+    let searcher = tokio::task::block_in_place(|| ctx.index.reader.searcher());
+
+    let title = ctx.index.schema.title;
+    let content = ctx.index.schema.content;
+    let query = QueryParser::for_index(searcher.index(), vec![title, content])
+        .parse_query(&search_query.query)
+        // FIXME: decide what to do if query is malformed
+        .unwrap();
+
+    // FIXME: when can this fail?
+    let results = searcher.search(&query, &TopDocs::with_limit(10)).unwrap();
+
+    // TODO: maybe add ellipsed contents of article?
+    let mut found = Vec::with_capacity(10);
+    for (_score, addr) in results {
+        let doc = searcher.doc(addr).unwrap();
+        found.push(doc.get_first(title).unwrap().text().unwrap().to_owned());
+    }
 
     Ok(render!(templates::SearchResults {
-        query: &query.query,
-        wiki: data.wiki(),
+        query: &search_query.query,
+        wiki: ctx.wiki(&account),
         results: &found,
     }))
 }
+

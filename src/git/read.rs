@@ -1,8 +1,5 @@
 use super::RepoPath;
-use crate::{
-    article::{ArticlePath, WikiArticle},
-    user_storage::UserAccount,
-};
+use crate::article::{ArticlePath, WikiArticle};
 use git2::Repository;
 
 pub struct ReadOnly<'a> {
@@ -68,7 +65,7 @@ impl<'a> ReadOnly<'a> {
                 if super::get_blob_oid(&tree, &tree_path)?.is_some() {
                     let signature = commit.author();
                     ret.push(HistoryEntry {
-                        user: UserAccount {
+                        user: Signature {
                             name: try_to_string(signature.name()),
                             email: try_to_string(signature.email()),
                         },
@@ -102,9 +99,15 @@ fn try_to_string(opt: Option<&str>) -> String {
     opt.map(ToOwned::to_owned).unwrap_or_else(String::new)
 }
 
+pub struct Signature {
+    pub name: String,
+    pub email: String,
+}
+
 pub struct HistoryEntry {
-    pub user: crate::user_storage::UserAccount,
+    pub user: Signature,
     pub date: ISOUtcDate,
     pub summary: String,
     pub rev: git2::Oid,
 }
+

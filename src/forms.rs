@@ -5,8 +5,11 @@ pub struct Login {
 }
 
 #[derive(serde::Deserialize)]
+#[serde(rename_all = "kebab-case")]
 pub struct Register {
     pub name: String,
     pub email: String,
     pub password: String,
+    pub password_check: String,
 }
+

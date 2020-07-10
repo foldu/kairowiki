@@ -1,3 +1,4 @@
+use super::UserAccount;
 use crate::migrations::{Migration, MigrationInfo, NeedsMigration};
 
 impl From<sqlx::Error> for super::Error {
@@ -34,28 +35,31 @@ impl super::UserStorage for SqliteStorage {
         true
     }
 
-    async fn check_credentials(
-        &self,
-        name: &str,
-        pass: &str,
-    ) -> Result<super::UserId, super::Error> {
+    async fn check_credentials(&self, name: &str, pass: &str) -> Result<UserAccount, super::Error> {
         let mut cxn = self.0.acquire().await?;
 
-        let (id, hash) =
-            match sqlx::query!("SELECT id, pass_hash FROM wiki_user WHERE name = ?", name)
-                .fetch_optional(&mut cxn)
-                .await
-            {
-                Ok(Some(row)) => Ok((
-                    row.id,
-                    PasswordHash::from_vec(row.pass_hash).expect("Invalid password in database"),
-                )),
-                Ok(None) => Err(super::Error::UserDoesNotExist),
-                Err(e) => Err(e.into()),
-            }?;
+        let row = sqlx::query!(
+            "SELECT id, name, email, pass_hash FROM wiki_user WHERE name = ?",
+            name
+        )
+        .fetch_optional(&mut cxn)
+        .await;
+
+        let (account, hash) = match row {
+            Ok(Some(row)) => Ok((
+                UserAccount {
+                    id: super::UserId(row.id),
+                    name: name.to_owned(),
+                    email: row.email,
+                },
+                PasswordHash::from_vec(row.pass_hash).expect("Invalid password in database"),
+            )),
+            Ok(None) => Err(super::Error::UserDoesNotExist),
+            Err(e) => Err(e.into()),
+        }?;
 
         if hash.verify(pass) {
-            Ok(super::UserId(id))
+            Ok(account)
         } else {
             Err(super::Error::InvalidPassword)
         }
@@ -65,28 +69,19 @@ impl super::UserStorage for SqliteStorage {
         let mut cxn = self.0.acquire().await?;
         let hash = PasswordHash::from_password(&info.password);
 
+        let name = &info.name;
+        let email = &info.email;
+        let hash = hash.as_ref();
         sqlx::query!(
             "INSERT INTO wiki_user(name, email, pass_hash) VALUES (?, ?, ?)",
-            &info.name,
-            &info.email,
-            hash.as_ref()
+            name,
+            email,
+            hash
         )
         .execute(&mut *cxn)
         .await?;
 
         Ok(())
-    }
-
-    async fn fetch_account(&self, id: super::UserId) -> Result<super::UserAccount, super::Error> {
-        let mut cxn = self.0.acquire().await?;
-        sqlx::query!("SELECT name, email FROM wiki_user WHERE id = ?", id.0)
-            .fetch_optional(&mut cxn)
-            .await?
-            .map(|row| super::UserAccount {
-                name: row.name,
-                email: row.email,
-            })
-            .ok_or(super::Error::UserDoesNotExist)
     }
 }
 
@@ -139,3 +134,4 @@ impl PasswordHash {
         .unwrap()
     }
 }
+

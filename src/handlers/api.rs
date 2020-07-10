@@ -1,45 +1,55 @@
 use crate::{
     api::{EditSubmit, PreviewMarkdown, RenderedMarkdown},
     article::WikiArticle,
-    data::Data,
-    user_storage::UserId,
+    context::Context,
+    user_storage::UserAccount,
 };
 
 pub async fn preview(
-    data: Data,
-    _user_id: UserId,
+    ctx: Context,
+    _account: UserAccount,
     request: PreviewMarkdown,
 ) -> Result<impl warp::Reply, warp::Rejection> {
-    let md = data.markdown_renderer.render(&request.markdown);
+    let md = ctx.markdown_renderer.render(&request.markdown);
     Ok(warp::reply::json(&RenderedMarkdown { rendered: md }))
 }
 
 pub async fn edit_submit(
-    data: Data,
+    ctx: Context,
     article: WikiArticle,
-    user_id: UserId,
+    account: UserAccount,
     edit: EditSubmit,
 ) -> Result<impl warp::Reply, warp::Rejection> {
-    let account = data
-        .user_storage
-        .fetch_account(user_id)
-        .await
+    let repo = ctx.repo.write().await;
+
+    let resp = tokio::task::block_in_place(|| repo.commit_article(&article, &account, &edit))
         .map_err(warp::reject::custom)?;
 
-    let repo = data.repo.write().await;
-
-    let resp = tokio::task::block_in_place(move || repo.commit_article(&article, &account, edit))
-        .map_err(warp::reject::custom)?;
+    match resp {
+        crate::api::Commit::NoConflict => {
+            let mut writer = ctx.index.writer.lock().await;
+            // FIXME:
+            tokio::task::block_in_place(|| {
+                crate::index::update_article(
+                    &ctx.index.schema,
+                    &mut writer,
+                    &article.title,
+                    &edit.markdown,
+                )
+            });
+        }
+        _ => (),
+    }
 
     Ok(warp::reply::json(&resp))
 }
 
 pub async fn article_info(
-    data: Data,
+    ctx: Context,
     article: WikiArticle,
 ) -> Result<impl warp::Reply, warp::Rejection> {
     let info = tokio::task::block_in_place(|| -> Result<_, crate::git::Error> {
-        let repo = data.repo.read()?;
+        let repo = ctx.repo.read()?;
         let head = repo.head()?;
         let oid = repo.oid_for_article(&head, &article)?;
 
@@ -58,3 +68,4 @@ pub async fn article_info(
         rev: crate::serde::Oid(info.1),
     }))
 }
+

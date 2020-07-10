@@ -15,7 +15,7 @@ pub struct Builder<'a> {
 pub struct Error;
 
 impl<'a> Builder<'a> {
-    pub fn element(mut self, elt: &str) -> Self {
+    pub fn element(mut self, elt: &impl std::fmt::Display) -> Self {
         let path = self.path.to_mut();
         write!(path, "/{}", elt).unwrap();
         self
@@ -173,3 +173,4 @@ mod test {
         );
     }
 }
+

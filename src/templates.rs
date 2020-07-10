@@ -1,4 +1,4 @@
-use crate::data::Wiki;
+use crate::context::Wiki;
 use askama::Template;
 
 #[derive(Template)]
@@ -33,10 +33,14 @@ pub struct Login<'a> {
 }
 
 impl<'a> Login<'a> {
-    pub fn new(data: &'a crate::data::Data, error: Option<&'a str>) -> Self {
+    pub fn new(
+        ctx: &'a crate::context::Context,
+        account: &'a Option<crate::user_storage::UserAccount>,
+        error: Option<&'a str>,
+    ) -> Self {
         Login {
-            wiki: data.wiki(),
-            registration_enabled: data.registration_possible(),
+            wiki: ctx.wiki(account),
+            registration_enabled: ctx.registration_possible(),
             error,
         }
     }
@@ -67,7 +71,7 @@ impl<'a> Register<'a> {
 pub struct SearchResults<'a> {
     pub wiki: Wiki<'a>,
     pub query: &'a str,
-    pub results: &'a [crate::article::ArticleTitle],
+    pub results: &'a [String],
 }
 
 #[derive(Template)]
@@ -127,3 +131,4 @@ impl<'a> Error<'a> {
         }
     }
 }
+

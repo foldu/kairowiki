@@ -1,10 +1,6 @@
 import * as monaco from "monaco-editor";
 import {
-    NoConflict,
-    Merged,
     EditSubmit,
-    Oid,
-    PreviewMarkdown,
     EditSubmitResponse,
     ArticleInfo,
     Model,
@@ -141,8 +137,10 @@ function addFileInput(model: Model) {
 
         const body = await resp.json();
 
+        fileInput.remove();
+
         listElt.append(
-            $e("a", { href: body.url, textContent: body.url }),
+            $e("a", { href: body.url }, [$e("img", { src: body.url })]),
             $e("button", {
                 onclick: () => insertImageLink(model.activeEditor, body.url),
                 textContent: "Insert markdown",
@@ -152,6 +150,7 @@ function addFileInput(model: Model) {
                 textContent: "Delete",
             }),
         );
+
         addFileInput(model);
     };
 
@@ -166,7 +165,7 @@ function addFileInput(model: Model) {
     document.querySelector("#file-list").append(listElt);
 }
 
-function switchTo(model: Model, targetButton: HTMLElement) {
+function switchTo(model: Model, targetButton: HTMLElement): boolean {
     const targetTab = model.tabs.get(targetButton);
     if (!targetTab.classList.contains("hidden")) {
         return false;
@@ -287,3 +286,4 @@ window.addEventListener("load", async () => {
         }
     });
 });
+

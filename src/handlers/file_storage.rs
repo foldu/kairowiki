@@ -1,4 +1,4 @@
-use crate::{data::Data, relative_url::RelativeUrlOwned};
+use crate::{context::Context, relative_url::RelativeUrlOwned};
 use bytes::Buf;
 use futures_util::StreamExt;
 
@@ -17,7 +17,7 @@ pub enum Error {
 impl warp::reject::Reject for Error {}
 
 async fn upload_(
-    data: Data,
+    ctx: Context,
     mut form: warp::filters::multipart::FormData,
 ) -> Result<RelativeUrlOwned, Error> {
     let first_field = form.next().await.ok_or(Error::ExtractFileField)??;
@@ -33,18 +33,19 @@ async fn upload_(
         file.extend(buf.bytes());
     }
 
-    data.file_storage.store(&file).await.map_err(Error::Store)
+    ctx.file_storage.store(&file).await.map_err(Error::Store)
 }
 
 pub async fn upload(
-    data: Data,
-    _: crate::user_storage::UserId,
+    ctx: Context,
+    _: crate::user_storage::UserAccount,
     form: warp::filters::multipart::FormData,
 ) -> Result<impl warp::Reply, warp::Rejection> {
     #[derive(serde::Serialize)]
     struct Reply<'a> {
         url: &'a str,
     }
-    let url = upload_(data, form).await.map_err(warp::reject::custom)?;
+    let url = upload_(ctx, form).await.map_err(warp::reject::custom)?;
     Ok(warp::reply::json(&Reply { url: url.as_ref() }))
 }
+

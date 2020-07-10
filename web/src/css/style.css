@@ -1,24 +1,20 @@
 @import "~normalize.css/normalize.css";
 @import "skeleton.css";
 
+@font-face {
+    font-family: ibm-plex-sans;
+    src: url("~@ibm/plex/IBM-Plex-Sans/fonts/complete/ttf/IBMPlexSans-Regular.ttf");
+}
+
 body {
     display: flex;
     flex-direction: column;
     justify-content: center;
-}
-
-nav > ul {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    list-style-type: none;
+    font-family: ibm-plex-sans;
+    font-size: 1.2rem;
 }
 
 @media (min-width: 20rem) {
-    nav > ul {
-        width: 15rem;
-    }
-
     body > * {
         width: 15rem;
     }
@@ -55,10 +51,6 @@ nav > ul {
         font-size: 3.5rem;
     }
 
-    nav > ul {
-        width: 55rem;
-    }
-
     body > * {
         width: 55rem;
     }
@@ -69,7 +61,6 @@ body > * {
 }
 
 .text-content {
-    padding: 2rem;
     margin: auto;
 }
 
@@ -92,17 +83,14 @@ body > * {
     content: " §";
 }
 
-/*
-button {
-    border: 1px solid;
-    color: black;
-    background: #f0f0f0;
-    padding: 1em 1em;
-    text-align: center;
-    text-decoration: none;
-    display: inline-block;
+.rendered-markdown > h1,
+.rendered-markdown > h2,
+.rendered-markdown > h3,
+.rendered-markdown > h4,
+.rendered-markdown > h5,
+.rendered-markdown > h6 {
+    margin-bottom: 0.5rem;
 }
-*/
 
 button:hover {
     background: lightgray;
@@ -110,18 +98,16 @@ button:hover {
 
 button.tab {
     border: none;
+    border-bottom: 2px solid;
+    margin-bottom: 1rem;
 }
 
 button.tab.active {
-    border-bottom: 2px solid;
+    border-color: #1eaedb;
 }
 
 button.tab:focus {
     outline: 0;
-}
-
-body {
-    font-family: Liberation Sans, Noto Sans, Sans;
 }
 
 pre {
@@ -136,23 +122,52 @@ pre {
 #wiki-article-head {
     display: flex;
     justify-content: space-between;
+    align-items: center;
+}
+
+#wiki-article-head a {
+    text-decoration: none;
+    color: black;
+}
+
+#wiki-article h1 {
+    margin-bottom: 1rem;
+}
+
+#wiki-article-head h1:hover::after {
+    content: " #";
 }
 
 #wiki-article-head.buttons {
     display: flex;
     align-content: center;
     justify-content: center;
-    font-size: 1em;
+    font-size: 1rem;
+}
+
+nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    list-style-type: none;
+}
+
+nav img {
+    object-fit: fit;
+    height: 4rem;
 }
 
 #searchbox {
     display: flex;
-    height: 2rem;
-    font-size: 2rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    height: 38px;
+    flex-grow: 1;
 }
 
 #searchbox input[type="search"] {
-    font-size: 1.2rem;
+    flex-grow: 1;
+    font-size: 1rem;
 }
 
 #search-submit {
@@ -216,12 +231,20 @@ footer {
 
 #file-list {
     list-style-type: none;
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    /*flex-direction: column; */
 }
 
 #file-list > li {
     display: flex;
+    padding: 2px;
+    height: 50px;
+}
+
+#file-list > li img {
+    max-height: 50px;
+    object-fit: fill;
 }
 
 #diff-view {
@@ -289,3 +312,4 @@ footer {
 .rev {
     font-family: Iosevka, Fira Mono, Monaco, monospace;
 }
+

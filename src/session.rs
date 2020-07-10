@@ -1,5 +1,4 @@
-use crate::user_storage::UserId;
-use futures_util::TryFutureExt;
+use crate::user_storage::{UserAccount, UserId};
 use std::{collections::BTreeMap, sync::Arc, time::Duration};
 use time::OffsetDateTime;
 use tokio::{stream::StreamExt, sync::RwLock};
@@ -28,7 +27,7 @@ impl Sessions {
         ret
     }
 
-    pub async fn login(&self, user_id: UserId) -> LoginSession {
+    pub async fn login(&self, account: UserAccount) -> LoginSession {
         let uuid = {
             let storage = self.0.read().await;
             loop {
@@ -41,13 +40,13 @@ impl Sessions {
         let mut storage = self.0.write().await;
         let stale_session = storage
             .users_logged_in
-            .get_mut(&user_id)
+            .get_mut(&account.id)
             .map(|stale_session| std::mem::replace(stale_session, uuid));
 
         if let Some(stale_session) = stale_session {
             storage.sessions.remove(&stale_session);
         } else {
-            storage.users_logged_in.insert(user_id, uuid);
+            storage.users_logged_in.insert(account.id, uuid);
         }
 
         let now = time::OffsetDateTime::now_utc();
@@ -55,8 +54,8 @@ impl Sessions {
         storage.sessions.insert(
             uuid,
             SessionData {
-                user_id,
                 expiry: now + time::Duration::seconds(3600),
+                account,
             },
         );
 
@@ -66,26 +65,26 @@ impl Sessions {
         }
     }
 
-    pub async fn get_user_id(&self, session_id: Uuid) -> Option<UserId> {
-        enum Id {
+    pub async fn get_user_data(&self, session_id: Uuid) -> Option<UserAccount> {
+        enum UserSession {
             Expired,
-            Live(UserId),
+            Live(UserAccount),
         }
 
-        let user_id = {
+        let user_data = {
             let storage = self.0.read().await;
             let now = OffsetDateTime::now_utc();
 
             match storage.sessions.get(&session_id) {
-                Some(data) if data.expired(now) => Some(Id::Expired),
-                Some(SessionData { user_id, .. }) => Some(Id::Live(*user_id)),
+                Some(data) if data.expired(now) => Some(UserSession::Expired),
+                Some(SessionData { account, .. }) => Some(UserSession::Live(account.clone())),
                 _ => None,
             }
         };
 
-        match user_id {
-            Some(Id::Live(id)) => Some(id),
-            Some(Id::Expired) => {
+        match user_data {
+            Some(UserSession::Live(account)) => Some(account),
+            Some(UserSession::Expired) => {
                 self.remove_session(session_id).await;
                 None
             }
@@ -112,7 +111,7 @@ pub struct SessionInner {
 impl SessionInner {
     fn remove_session(&mut self, session_id: Uuid) {
         if let Some(entry) = self.sessions.remove(&session_id) {
-            self.users_logged_in.remove(&entry.user_id);
+            self.users_logged_in.remove(&entry.account.id);
         }
     }
 
@@ -146,7 +145,7 @@ impl SessionInner {
 }
 
 pub struct SessionData {
-    user_id: UserId,
+    account: crate::user_storage::UserAccount,
     expiry: OffsetDateTime,
 }
 
@@ -176,35 +175,53 @@ impl warp::reject::Reject for Error {}
 pub const COOKIE_NAME: &str = "warp-session";
 
 pub fn login_required(
-    sessions: crate::session::Sessions,
-) -> impl warp::Filter<Extract = (UserId,), Error = warp::Rejection> + Clone {
+    sessions: Sessions,
+) -> impl warp::Filter<Extract = (UserAccount,), Error = warp::Rejection> + Clone {
     use warp::Filter;
     warp::path::full()
         .and(warp::filters::cookie::optional(COOKIE_NAME))
         .and_then(move |path: warp::path::FullPath, cookie: Option<String>| {
             let sessions = sessions.clone();
-            get_session(sessions, path, cookie).map_err(warp::reject::custom)
+            async move {
+                get_session(sessions, cookie)
+                    .await
+                    .and_then(|acc| {
+                        acc.ok_or_else(|| Error::SessionRequired {
+                            access_url: path.as_str().to_owned(),
+                        })
+                    })
+                    .map_err(warp::reject::custom)
+            }
+        })
+}
+
+pub fn login_optional(
+    sessions: Sessions,
+) -> impl warp::Filter<Extract = (Option<UserAccount>,), Error = warp::Rejection> + Clone {
+    use warp::Filter;
+    warp::path::full()
+        .and(warp::filters::cookie::optional(COOKIE_NAME))
+        .and_then(move |_path: warp::path::FullPath, cookie: Option<String>| {
+            let sessions = sessions.clone();
+            async move {
+                get_session(sessions, cookie)
+                    .await
+                    .map_err(warp::reject::custom)
+            }
         })
 }
 
 async fn get_session(
     sessions: Sessions,
-    path: warp::path::FullPath,
     cookie: Option<String>,
-) -> Result<UserId, Error> {
-    let path = path.as_str();
-    let cookie_cont = cookie.ok_or_else(|| Error::SessionRequired {
-        access_url: path.to_owned(),
-    })?;
-
-    let session_id = Uuid::parse_str(&cookie_cont)?;
-
-    sessions
-        .get_user_id(session_id)
-        .await
-        .ok_or_else(|| Error::SessionRequired {
-            access_url: path.to_owned(),
-        })
+) -> Result<Option<UserAccount>, Error> {
+    match cookie {
+        Some(cookie) => {
+            let session_id = Uuid::parse_str(&cookie)?;
+            Ok(sessions.get_user_data(session_id).await)
+        }
+        None => Ok(None),
+    }
 }
 
 pub struct LoginSession {
@@ -235,3 +252,4 @@ impl std::convert::TryFrom<ClearCookie> for HeaderValue {
         Ok(HeaderValue::try_from(cookie).unwrap())
     }
 }
+
