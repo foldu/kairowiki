@@ -31,14 +31,11 @@ impl ArticlePath {
 pub struct ArticleTitle(String);
 
 impl ArticleTitle {
-    pub fn from_path(root: impl AsRef<Path>, path: impl AsRef<Path>) -> Result<Self, Error> {
+    pub fn from_path(path: impl AsRef<Path>) -> Result<Self, Error> {
         let path = path.as_ref();
-        let root = root.as_ref();
         if path.extension() != Some(OsStr::new("md")) {
             return Err(Error::InvalidExtension);
         }
-
-        let path = path.strip_prefix(root).unwrap();
 
         path.with_extension("")
             .into_os_string()
@@ -59,23 +56,10 @@ impl WikiArticle {
             title,
         }
     }
-
-    pub async fn read_to_string(&self) -> Result<String, Error> {
-        match tokio::fs::read_to_string(&self.path.as_ref()).await {
-            Err(e) if e.kind() == std::io::ErrorKind::NotFound => Err(Error::DoesNotExist),
-            other => other.map_err(Error::Io),
-        }
-    }
 }
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
-    #[error("Article does not exist")]
-    DoesNotExist,
-
-    #[error("Can't read article: {0}")]
-    Io(std::io::Error),
-
     #[error("Path is not a markdown file")]
     InvalidExtension,
 

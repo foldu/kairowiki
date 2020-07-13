@@ -75,24 +75,32 @@ impl<'a> ReadOnly<'a> {
         Ok(ret)
     }
 
+    fn entry_to_article_info(&self, entry: &git2::TreeEntry) -> Option<(ArticleTitle, String)> {
+        let title = entry
+            .name()
+            .and_then(|path| ArticleTitle::from_path(path).ok())?;
+
+        let obj = entry.to_object(&self.repo).ok()?;
+        let content = obj
+            .as_blob()
+            .and_then(|blob| std::str::from_utf8(blob.content()).ok())?;
+
+        Some((title, content.to_owned()))
+    }
+
     pub fn traverse_head_tree(
         &'a self,
-        mut f: impl FnMut(ArticleTitle, &str),
+        mut f: impl FnMut(ArticleTitle, String),
     ) -> Result<(), super::Error> {
         let head = self.head()?;
         let tree = head.peel_to_commit()?.tree()?;
 
         tree.walk(TreeWalkMode::PreOrder, |_some_str, entry| {
-            if let Some(title) = entry.name() {
-                if let Ok(obj) = entry.to_object(&self.repo) {
-                    if let Some(blob) = obj.as_blob() {
-                        if let Ok(cont) = std::str::from_utf8(blob.content()) {
-                            let title = ArticleTitle::new(title.to_string());
-                            f(title, cont);
-                        }
-                    }
-                }
+            if let Some((title, content)) = self.entry_to_article_info(entry) {
+                println!("{}", title);
+                f(title, content)
             }
+
             TreeWalkResult::Ok
         })?;
 

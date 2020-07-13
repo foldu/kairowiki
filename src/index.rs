@@ -4,7 +4,7 @@ use tantivy::{
     collector::TopDocs,
     directory::MmapDirectory,
     query::{QueryParser, TermQuery},
-    schema::{Field, IndexRecordOption, STORED, TEXT},
+    schema::{Field, IndexRecordOption, STORED, STRING, TEXT},
     IndexReader, IndexWriter, TantivyError, Term,
 };
 use tokio::sync::Mutex;
@@ -34,9 +34,9 @@ impl From<tantivy::TantivyError> for Error {
 }
 
 pub struct Index {
-    pub reader: IndexReader,
-    pub writer: Mutex<IndexWriter>,
-    pub schema: Schema,
+    reader: IndexReader,
+    writer: Mutex<IndexWriter>,
+    schema: Schema,
 }
 
 impl Index {
@@ -50,7 +50,7 @@ impl Index {
             std::fs::create_dir_all(index_path)?;
             let dir = MmapDirectory::open(index_path).map_err(TantivyError::from)?;
             let mut schema = tantivy::schema::Schema::builder();
-            let title = schema.add_text_field("title", TEXT | STORED);
+            let title = schema.add_text_field("title", STRING | STORED);
             let content = schema.add_text_field("content", TEXT | STORED);
             let schema = schema.build();
 
@@ -86,7 +86,7 @@ impl Index {
         repo.traverse_head_tree(|title, content| {
             let mut doc = tantivy::Document::new();
             doc.add_text(self.schema.title, &title);
-            doc.add_text(self.schema.content, content);
+            doc.add_text(self.schema.content, &content);
             writer.add_document(doc);
         })
         .map_err(Error::Rebuild)?;
@@ -101,7 +101,7 @@ impl Index {
     // TODO: use slow path fetch from repo when reindexing
     pub fn get_article(&self, title: &ArticleTitle) -> Option<String> {
         let searcher = self.reader.searcher();
-        let term = Term::from_field_text(self.schema.title.clone(), title.as_ref());
+        let term = Term::from_field_text(self.schema.title.clone(), &format!("{}", title.as_ref()));
         let term_query = TermQuery::new(term, IndexRecordOption::Basic);
         let results = searcher
             .search(&term_query, &TopDocs::with_limit(1))
