@@ -49,28 +49,34 @@ impl<'a> ReadOnly<'a> {
         let tree_path = self.repo_path.tree_path(&article.path);
 
         let mut rev_walk = self.repo.revwalk()?;
-        rev_walk.set_sorting(git2::Sort::TIME)?;
+        rev_walk.set_sorting(git2::Sort::TOPOLOGICAL | git2::Sort::REVERSE)?;
         rev_walk.push_head()?;
 
         let mut ret = Vec::new();
-        for oid in rev_walk {
-            let oid = oid?;
-            if let Ok(commit) = self.repo.find_commit(oid) {
+        let mut last_oid = None;
+        for commit_oid in rev_walk {
+            let commit_oid = commit_oid?;
+            if let Ok(commit) = self.repo.find_commit(commit_oid) {
                 let tree = commit.tree()?;
-                if super::get_blob_oid(&tree, &tree_path)?.is_some() {
-                    let signature = commit.author();
-                    ret.push(HistoryEntry {
-                        user: Signature {
-                            name: try_to_string(signature.name()),
-                            email: try_to_string(signature.email()),
-                        },
-                        date: ISOUtcDate::from_unix(commit.time().seconds()),
-                        summary: try_to_string(commit.summary()),
-                        rev: oid,
-                    });
+                if let Ok(Some(blob_oid)) = super::get_blob_oid(&tree, &tree_path) {
+                    if Some(blob_oid) != last_oid {
+                        let signature = commit.author();
+                        ret.push(HistoryEntry {
+                            user: Signature {
+                                name: try_to_string(signature.name()),
+                                email: try_to_string(signature.email()),
+                            },
+                            date: ISOUtcDate::from_unix(commit.time().seconds()),
+                            summary: try_to_string(commit.summary()),
+                            rev: commit_oid,
+                        });
+                        last_oid = Some(blob_oid);
+                    }
                 }
             }
         }
+
+        ret.reverse();
 
         Ok(ret)
     }
