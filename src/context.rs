@@ -1,7 +1,7 @@
 use crate::{
     file_storage::{self, FileStorage},
     git::Repo,
-    index,
+    index::Index,
     markdown::MarkdownRenderer,
     serde::SeparatedList,
     user_storage::{self, UserAccount},
@@ -12,8 +12,6 @@ use std::{
     path::{Path, PathBuf},
     sync::Arc,
 };
-use tantivy::{IndexReader, IndexWriter};
-use tokio::sync::Mutex;
 
 #[derive(derive_more::Deref, Clone)]
 pub struct Context(Arc<DataInner>);
@@ -45,16 +43,10 @@ impl Context {
 
         let theme_path = cfg.static_dir.join("hl.css");
 
-        let (schema, reader, mut writer) =
-            index::open(&cfg.index_dir).context("Can't set up search index")?;
-
-        crate::index::rebuild(&cfg.git_repo, &schema, &mut writer)?;
-
-        let index = Index {
-            reader,
-            writer: Mutex::new(writer),
-            schema,
-        };
+        let repo_read = repo.read()?;
+        let index = Index::open(&cfg.index_dir, &repo_read)
+            .await
+            .context("Can't set up search index")?;
 
         Ok(Self(Arc::new(DataInner {
             repo,
@@ -93,12 +85,6 @@ fn mkdir_p(path: impl AsRef<Path>) -> Result<(), anyhow::Error> {
             e
         )),
     }
-}
-
-pub struct Index {
-    pub reader: IndexReader,
-    pub writer: Mutex<IndexWriter>,
-    pub schema: index::Schema,
 }
 
 pub struct DataInner {

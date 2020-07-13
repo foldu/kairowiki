@@ -1,6 +1,6 @@
 use super::RepoPath;
-use crate::article::{ArticlePath, WikiArticle};
-use git2::Repository;
+use crate::article::{ArticlePath, ArticleTitle, WikiArticle};
+use git2::{Repository, TreeWalkMode, TreeWalkResult};
 
 pub struct ReadOnly<'a> {
     pub(super) repo_path: &'a RepoPath,
@@ -50,12 +50,7 @@ impl<'a> ReadOnly<'a> {
 
         let mut rev_walk = self.repo.revwalk()?;
         rev_walk.set_sorting(git2::Sort::TIME)?;
-        match super::repo_head(&self.repo)? {
-            Some(_) => {
-                rev_walk.push_head()?;
-            }
-            _ => return Ok(Vec::new()),
-        };
+        rev_walk.push_head()?;
 
         let mut ret = Vec::new();
         for oid in rev_walk {
@@ -78,6 +73,30 @@ impl<'a> ReadOnly<'a> {
         }
 
         Ok(ret)
+    }
+
+    pub fn traverse_head_tree(
+        &'a self,
+        mut f: impl FnMut(ArticleTitle, &str),
+    ) -> Result<(), super::Error> {
+        let head = self.head()?;
+        let tree = head.peel_to_commit()?.tree()?;
+
+        tree.walk(TreeWalkMode::PreOrder, |_some_str, entry| {
+            if let Some(title) = entry.name() {
+                if let Ok(obj) = entry.to_object(&self.repo) {
+                    if let Some(blob) = obj.as_blob() {
+                        if let Ok(cont) = std::str::from_utf8(blob.content()) {
+                            let title = ArticleTitle::new(title.to_string());
+                            f(title, cont);
+                        }
+                    }
+                }
+            }
+            TreeWalkResult::Ok
+        })?;
+
+        Ok(())
     }
 }
 
