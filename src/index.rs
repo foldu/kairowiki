@@ -137,7 +137,7 @@ impl Index {
         Ok(())
     }
 
-    pub fn search(&self, query: &str, ndocs: usize) -> Result<Vec<String>, Error> {
+    pub fn search(&self, query: &str, ndocs: usize) -> Result<Vec<(String, String)>, Error> {
         let searcher = self.reader.searcher();
 
         let query = QueryParser::for_index(
@@ -156,13 +156,29 @@ impl Index {
         let mut found = Vec::with_capacity(ndocs);
         for (_score, addr) in results {
             let doc = searcher.doc(addr).unwrap();
-            found.push(
-                doc.get_first(self.schema.title)
-                    .unwrap()
-                    .text()
-                    .unwrap()
-                    .to_owned(),
-            );
+            let title = doc
+                .get_first(self.schema.title)
+                .unwrap()
+                .text()
+                .unwrap()
+                .to_owned();
+
+            let content = doc.get_first(self.schema.content).unwrap().text().unwrap();
+
+            let mut i = 200;
+            let elided_content = loop {
+                // I hope this uses is_char_boundary
+                match content.get(0..i) {
+                    Some(cont) => break cont,
+                    None => {
+                        i += 1;
+                    }
+                }
+            };
+
+            let elided_content = elided_content.to_owned();
+
+            found.push((title, elided_content));
         }
 
         Ok(found)
