@@ -165,10 +165,15 @@ function addFileInput(model: Model) {
     document.querySelector("#file-list").append(listElt);
 }
 
-function switchTo(model: Model, targetButton: HTMLElement): boolean {
+enum TabState {
+    Active,
+    Inactive,
+}
+
+function switchTo(model: Model, targetButton: HTMLElement): TabState {
     const targetTab = model.tabs.get(targetButton);
     if (!targetTab.classList.contains("hidden")) {
-        return false;
+        return TabState.Active;
     }
     targetButton.classList.add("active");
 
@@ -181,7 +186,7 @@ function switchTo(model: Model, targetButton: HTMLElement): boolean {
         }
     }
 
-    return true;
+    return TabState.Inactive;
 }
 
 function showDiff(model: Model, text: string) {
@@ -189,16 +194,18 @@ function showDiff(model: Model, text: string) {
         const diffDiv = $("#diff-editor");
         document.querySelector("#editor").classList.add("hidden");
         diffDiv.classList.remove("hidden");
-        model.diffEditor = monaco.editor.createDiffEditor(diffDiv);
+        model.diffEditor = monaco.editor.createDiffEditor(diffDiv, {
+            enableSplitViewResizing: true,
+            renderSideBySide: false,
+        });
     }
     model.activeEditor = model.diffEditor.getModifiedEditor();
 
     const modified = monaco.editor.createModel(text);
 
-    // FIXME: logic error
     model.diffEditor.setModel({
         original: monaco.editor.createModel(model.editor.getValue()),
-        modified: modified,
+        modified,
     });
 }
 
@@ -239,8 +246,8 @@ window.addEventListener("load", async () => {
     });
 
     $("#preview-button").addEventListener("click", async (evt) => {
-        const needsRender = switchTo(model, evt.target as HTMLElement);
-        if (needsRender) {
+        const oldTabState = switchTo(model, evt.target as HTMLElement);
+        if (oldTabState === TabState.Inactive) {
             const article = document.querySelector("#preview-tab > article");
             article.innerHTML = "Rendering preview";
             const response = await sendJson<RenderedMarkdown>(
@@ -276,10 +283,13 @@ window.addEventListener("load", async () => {
                 case "merged":
                     model.articleInfo = {
                         ...model.articleInfo,
-                        oid: body.oid,
-                        rev: body.rev,
+                        oid: resp.oid,
+                        rev: resp.rev,
                     };
-                    notify("Merge Conflict", "Your changes were auto-merged");
+                    notify(
+                        "Merge Conflict",
+                        "Your changes were auto-merged, click on save to accept",
+                    );
                     showDiff(model, resp.merged);
                     break;
             }

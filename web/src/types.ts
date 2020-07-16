@@ -44,3 +44,4 @@ export type Model = {
     readonly tabs: Map<HTMLElement, HTMLElement>;
     activeEditor: editor.ICodeEditor;
 };
+
