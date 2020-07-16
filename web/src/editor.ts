@@ -5,6 +5,7 @@ import {
     ArticleInfo,
     Model,
     RenderedMarkdown,
+    Diff,
 } from "./types";
 import { $, stripPrefix, $e } from "./util";
 
@@ -189,22 +190,34 @@ function switchTo(model: Model, targetButton: HTMLElement): TabState {
     return TabState.Inactive;
 }
 
-function showDiff(model: Model, text: string) {
+function showDiff(model: Model, diff: Diff) {
     if (model.diffEditor === null) {
         const diffDiv = $("#diff-editor");
         document.querySelector("#editor").classList.add("hidden");
         diffDiv.classList.remove("hidden");
         model.diffEditor = monaco.editor.createDiffEditor(diffDiv, {
             enableSplitViewResizing: true,
-            renderSideBySide: false,
         });
     }
     model.activeEditor = model.diffEditor.getModifiedEditor();
 
-    const modified = monaco.editor.createModel(text);
+    let original: monaco.editor.ITextModel;
+    let modified: monaco.editor.ITextModel;
+    switch (diff.type) {
+        case "merged":
+            original = monaco.editor.createModel(model.editor.getValue());
+            modified = monaco.editor.createModel(diff.merged);
+            model.diffEditor.updateOptions({ renderSideBySide: false });
+            break;
+        case "conflict":
+            original = monaco.editor.createModel(diff.ours);
+            modified = monaco.editor.createModel(diff.theirs);
+            model.diffEditor.updateOptions({ renderSideBySide: true });
+            break;
+    }
 
     model.diffEditor.setModel({
-        original: monaco.editor.createModel(model.editor.getValue()),
+        original,
         modified,
     });
 }
@@ -280,7 +293,7 @@ window.addEventListener("load", async () => {
                 case "noConflict":
                     window.location.href = "/wiki/" + model.title;
                     break;
-                case "merged":
+                default:
                     model.articleInfo = {
                         ...model.articleInfo,
                         oid: resp.oid,
@@ -290,7 +303,7 @@ window.addEventListener("load", async () => {
                         "Merge Conflict",
                         "Your changes were auto-merged, click on save to accept",
                     );
-                    showDiff(model, resp.merged);
+                    showDiff(model, resp);
                     break;
             }
         }

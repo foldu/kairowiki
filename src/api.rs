@@ -3,9 +3,19 @@ use crate::serde::Oid;
 #[derive(serde::Serialize)]
 #[serde(rename_all = "camelCase", tag = "type")]
 pub enum Commit {
-    Merged { merged: String, oid: Oid, rev: Oid },
+    Merged {
+        merged: String,
+        oid: Oid,
+        rev: Oid,
+    },
 
-    Conflict { original: String, modified: String },
+    Conflict {
+        ancestor: Option<String>,
+        ours: String,
+        theirs: String,
+        oid: Oid,
+        rev: Oid,
+    },
 
     NoConflict,
 }
