@@ -213,12 +213,9 @@ async fn run() -> Result<(), anyhow::Error> {
 
 fn init_logging() {
     // FIXME: hack for default log level=info
-    match std::env::var_os("RUST_LOG") {
-        Some(_) => (),
-        None => {
-            std::env::set_var("RUST_LOG", "info");
-        }
-    };
+    if let None = std::env::var_os("RUST_LOG") {
+        std::env::set_var("RUST_LOG", "info");
+    }
     tracing_subscriber::fmt()
         .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
         .init()
