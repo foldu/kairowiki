@@ -32,6 +32,7 @@ naersk.buildPackage {
   '';
   DATABASE_URL = "sqlite://data/db/db.sqlite";
   MIME_TYPES_PATH = mimeTypesFile;
+  RUSTFLAGS = "-C link-arg=-fuse-ld=lld";
   release = !debug;
   doCheck = debug;
   nativeBuildInputs = [
