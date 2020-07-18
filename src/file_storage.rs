@@ -47,7 +47,7 @@ impl FileStorage {
     }
 
     pub async fn store(&self, file: &[u8]) -> Result<RelativeUrlOwned, Error> {
-        let mime = Mime::from_str(&tree_magic::from_u8(file))
+        let mime = Mime::from_str(&tree_magic_mini::from_u8(file))
             .expect("tree_magic returned invalid mime type");
 
         let ext = if let Some(ext) = self.allowed_mime_types.get(&mime) {
