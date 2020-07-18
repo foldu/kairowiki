@@ -1,0 +1,13 @@
+name: cargo-deny check
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test: cargo-deny check
+    name: Test build
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: EmbarkStudios/cargo-deny-action@v1
