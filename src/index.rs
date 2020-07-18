@@ -54,7 +54,7 @@ impl Index {
             let content = schema.add_text_field("content", TEXT | STORED);
             let schema = schema.build();
 
-            let index = tantivy::Index::open_or_create(dir, schema.clone())?;
+            let index = tantivy::Index::open_or_create(dir, schema)?;
             let schema = Schema { title, content };
             Ok((index, schema))
         })?;
@@ -101,7 +101,7 @@ impl Index {
     // TODO: use slow path fetch from repo when reindexing
     pub fn get_article(&self, title: &ArticleTitle) -> Option<String> {
         let searcher = self.reader.searcher();
-        let term = Term::from_field_text(self.schema.title.clone(), &format!("{}", title.as_ref()));
+        let term = Term::from_field_text(self.schema.title, title.as_ref());
         let term_query = TermQuery::new(term, IndexRecordOption::Basic);
         let results = searcher
             .search(&term_query, &TopDocs::with_limit(1))
@@ -184,4 +184,3 @@ impl Index {
         Ok(found)
     }
 }
-

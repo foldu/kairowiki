@@ -25,15 +25,12 @@ pub async fn edit_submit(
     let resp = tokio::task::block_in_place(|| repo.commit_article(&article, &account, &edit))
         .map_err(warp::reject::custom)?;
 
-    match resp {
-        crate::api::Commit::NoConflict => {
-            ctx.index
-                .update_article(&article.title, &edit.markdown)
-                .await
-                // FIXME:
-                .unwrap();
-        }
-        _ => (),
+    if let crate::api::Commit::NoConflict = resp {
+        ctx.index
+            .update_article(&article.title, &edit.markdown)
+            .await
+            // FIXME:
+            .unwrap();
     }
 
     Ok(warp::reply::json(&resp))
@@ -63,4 +60,3 @@ pub async fn article_info(
         rev: crate::serde::Oid(info.1),
     }))
 }
-

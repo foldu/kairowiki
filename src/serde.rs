@@ -63,7 +63,7 @@ where
     where
         E: serde::de::Error,
     {
-        v.split(",")
+        v.split(',')
             .map(|s| s.trim().parse().map_err(Error::custom))
             .collect()
     }
@@ -99,4 +99,3 @@ fn roundtrip_oid() {
     let deserialized: Test = serde_json::from_str(&serialized).unwrap();
     assert_eq!(oid, deserialized.field.0);
 }
-

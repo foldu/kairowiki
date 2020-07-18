@@ -62,7 +62,7 @@ impl Context {
 impl Context {
     pub fn wiki<'a>(&'a self, account: &'a Option<UserAccount>) -> Wiki {
         Wiki {
-            login_status: account.into(),
+            login_status: account,
             name: &self.config.wiki_name,
             footer: &self.config.footer,
             logo: "/static/logo.svg",
