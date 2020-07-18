@@ -27,16 +27,11 @@ pub async fn edit_submit(
 
     match resp {
         crate::api::Commit::NoConflict => {
-            let mut writer = ctx.index.writer.lock().await;
-            // FIXME:
-            tokio::task::block_in_place(|| {
-                crate::index::update_article(
-                    &ctx.index.schema,
-                    &mut writer,
-                    &article.title,
-                    &edit.markdown,
-                )
-            });
+            ctx.index
+                .update_article(&article.title, &edit.markdown)
+                .await
+                // FIXME:
+                .unwrap();
         }
         _ => (),
     }

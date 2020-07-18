@@ -151,26 +151,20 @@ async fn run() -> Result<(), anyhow::Error> {
         .and(warp::get())
         .and_then(handlers::api::article_info);
 
-    let routes = routes! {
-        home,
-        wiki_home,
-        wiki_entries,
-        register_form,
-        register_post,
-        login_form,
-        login_post,
-        search,
-        static_,
-        edit,
-        history,
-        logout,
-        upload,
-        serve_files,
-        preview,
-        edit_submit,
-        article_info
-    };
-    //let routes = routes.or();
+    let user = login_form
+        .boxed()
+        .or(register_form.boxed().or(register_post.boxed()))
+        .or(login_post.boxed().or(logout.boxed()));
+    let wiki = wiki_home
+        .boxed()
+        .or(wiki_entries.boxed().or(edit.boxed()))
+        .or(history.boxed().or(search.boxed()));
+    let files = static_.boxed().or(upload.boxed().or(serve_files.boxed()));
+    let api = preview
+        .boxed()
+        .or(article_info.boxed().or(edit_submit.boxed()));
+
+    let routes = home.or(user.or(wiki)).or(api.or(files));
 
     let domain = ctx.config.domain.as_ref().cloned().unwrap_or_else(|| {
         url::Url::parse(&format!("http://localhost:{}", ctx.config.port)).unwrap()
@@ -248,4 +242,3 @@ fn main() {
         std::process::exit(1);
     }
 }
-

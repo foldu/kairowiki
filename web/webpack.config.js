@@ -38,7 +38,7 @@ module.exports = {
                 use: [MiniCssExtractPlugin.loader, "css-loader"],
             },
             {
-                test: /\.(ttf|svg)$/,
+                test: /\.(ttf|svg|woff2)$/,
                 use: {
                     loader: "file-loader",
                     options: {
@@ -50,3 +50,4 @@ module.exports = {
     },
     plugins: [new MiniCssExtractPlugin()],
 };
+

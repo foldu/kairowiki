@@ -3,7 +3,7 @@
 
 @font-face {
     font-family: ibm-plex-sans;
-    src: url("~@ibm/plex/IBM-Plex-Sans/fonts/complete/ttf/IBMPlexSans-Regular.ttf");
+    src: url("~@ibm/plex/IBM-Plex-Sans/fonts/complete/woff2/IBMPlexSans-Regular.woff2");
 }
 
 body {
@@ -220,12 +220,7 @@ footer {
     flex-grow: 2;
 }
 
-#editor {
-    /* FIXME: I have no idea how css works */
-    height: 600px;
-}
-
-#diff-editor {
+.editor {
     height: 600px;
 }
 
@@ -233,7 +228,6 @@ footer {
     list-style-type: none;
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    /*flex-direction: column; */
 }
 
 #file-list > li {
@@ -259,6 +253,7 @@ footer {
 
 .row {
     display: flex;
+    align-items: center;
 }
 
 #commit-msg {
@@ -278,10 +273,6 @@ footer {
 
 #notifications > li {
     min-width: 30em;
-    /*
-    display: flex;
-    flex-direction: column;
-    */
     border: dotted 1px;
     padding: 1em;
 }

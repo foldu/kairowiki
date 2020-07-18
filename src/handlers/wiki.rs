@@ -1,10 +1,7 @@
 use crate::{
     article::WikiArticle, context::Context, serde::Oid, templates, user_storage::UserAccount,
 };
-use warp::{
-    reject::{self, Rejection},
-    Reply,
-};
+use warp::{reject::Rejection, Reply};
 
 #[derive(serde::Deserialize)]
 pub struct EntryQuery {
@@ -19,14 +16,13 @@ pub async fn show_entry(
 ) -> Result<impl Reply, Rejection> {
     // TODO: add rendering cache
     let body = match query.rev {
-        None => match article.read_to_string().await {
-            Ok(cont) => tokio::task::block_in_place(|| ctx.markdown_renderer.render(&cont)),
-            Err(crate::article::Error::DoesNotExist) => format!(
+        None => tokio::task::block_in_place(|| match ctx.index.get_article(&article.title) {
+            Some(cont) => ctx.markdown_renderer.render(&cont),
+            None => format!(
                 "Article with title {} not found, click on edit to create it",
                 article.title.as_ref()
             ),
-            Err(e) => return Err(reject::custom(e)),
-        },
+        }),
         Some(rev) => {
             tokio::task::block_in_place(|| ctx.repo.read()?.article_at_rev(rev.0, &article.path))
                 .map_err(warp::reject::custom)?

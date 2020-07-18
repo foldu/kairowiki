@@ -47,6 +47,12 @@ pub struct RepoLock<'a> {
     pub(super) repo: MutexGuard<'a, Repository>,
 }
 
+fn read_entry(repo: &git2::Repository, ent: git2::IndexEntry) -> Result<String, git2::Error> {
+    let ent = repo.find_blob(ent.id)?;
+    // FIXME:
+    Ok(String::from_utf8(ent.content().to_vec()).unwrap())
+}
+
 impl<'a> RepoLock<'a> {
     pub fn commit_article(
         &self,
@@ -92,20 +98,33 @@ impl<'a> RepoLock<'a> {
                     .merge_trees(&ancestor_tree, &head_tree, &new_tree, None)?;
 
                 if index.has_conflicts() {
-                    todo!("Index has conflicts");
+                    let conflict = index.conflicts()?.next().unwrap()?;
+                    let ancestor = conflict
+                        .ancestor
+                        .map(|ent| read_entry(&self.repo, ent))
+                        .transpose()?;
+                    let ours = read_entry(&self.repo, conflict.our.unwrap())?;
+                    let theirs = read_entry(&self.repo, conflict.their.unwrap())?;
+                    Ok(api::Commit::Conflict {
+                        ancestor,
+                        ours,
+                        theirs,
+                        oid: Oid(current_oid),
+                        rev: Oid(head_commit.id()),
+                    })
+                } else {
+                    let entry = index.get_path(tree_path.as_ref(), 0).unwrap();
+
+                    let merged = self.repo.find_blob(entry.id)?;
+                    // TODO: handle if the TreeEntry is a subtree(directory)
+
+                    Ok(api::Commit::Merged {
+                        // TODO: handle binary files
+                        merged: String::from_utf8(merged.content().to_vec()).unwrap(),
+                        oid: Oid(current_oid),
+                        rev: Oid(head_commit.id()),
+                    })
                 }
-
-                let entry = index.get_path(tree_path.as_ref(), 0).unwrap();
-
-                let merged = self.repo.find_blob(entry.id)?;
-                // TODO: handle if the TreeEntry is a subtree(directory)
-
-                Ok(api::Commit::Merged {
-                    // TODO: handle binary files
-                    merged: String::from_utf8(merged.content().to_vec()).unwrap(),
-                    oid: Oid(current_oid),
-                    rev: Oid(head_commit.id()),
-                })
             }
             None => {
                 write_and_commit_file(

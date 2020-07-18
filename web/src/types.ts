@@ -11,7 +11,17 @@ export type Merged = {
     rev: Oid;
 };
 
-export type EditSubmitResponse = Merged | NoConflict;
+export type Conflict = {
+    type: "conflict";
+    ours: string;
+    theirs: string;
+    oid: Oid;
+    rev: Oid;
+};
+
+export type Diff = Conflict | Merged;
+
+export type EditSubmitResponse = NoConflict | Diff;
 
 export type Oid = string;
 
@@ -44,3 +54,4 @@ export type Model = {
     readonly tabs: Map<HTMLElement, HTMLElement>;
     activeEditor: editor.ICodeEditor;
 };
+

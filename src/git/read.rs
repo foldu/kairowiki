@@ -1,6 +1,6 @@
 use super::RepoPath;
-use crate::article::{ArticlePath, WikiArticle};
-use git2::Repository;
+use crate::article::{ArticlePath, ArticleTitle, WikiArticle};
+use git2::{Repository, TreeWalkMode, TreeWalkResult};
 
 pub struct ReadOnly<'a> {
     pub(super) repo_path: &'a RepoPath,
@@ -49,35 +49,68 @@ impl<'a> ReadOnly<'a> {
         let tree_path = self.repo_path.tree_path(&article.path);
 
         let mut rev_walk = self.repo.revwalk()?;
-        rev_walk.set_sorting(git2::Sort::TIME)?;
-        match super::repo_head(&self.repo)? {
-            Some(_) => {
-                rev_walk.push_head()?;
-            }
-            _ => return Ok(Vec::new()),
-        };
+        rev_walk.set_sorting(git2::Sort::TOPOLOGICAL | git2::Sort::REVERSE)?;
+        rev_walk.push_head()?;
 
         let mut ret = Vec::new();
-        for oid in rev_walk {
-            let oid = oid?;
-            if let Ok(commit) = self.repo.find_commit(oid) {
+        let mut last_oid = None;
+        for commit_oid in rev_walk {
+            let commit_oid = commit_oid?;
+            if let Ok(commit) = self.repo.find_commit(commit_oid) {
                 let tree = commit.tree()?;
-                if super::get_blob_oid(&tree, &tree_path)?.is_some() {
-                    let signature = commit.author();
-                    ret.push(HistoryEntry {
-                        user: Signature {
-                            name: try_to_string(signature.name()),
-                            email: try_to_string(signature.email()),
-                        },
-                        date: ISOUtcDate::from_unix(commit.time().seconds()),
-                        summary: try_to_string(commit.summary()),
-                        rev: oid,
-                    });
+                if let Ok(Some(blob_oid)) = super::get_blob_oid(&tree, &tree_path) {
+                    if Some(blob_oid) != last_oid {
+                        let signature = commit.author();
+                        ret.push(HistoryEntry {
+                            user: Signature {
+                                name: try_to_string(signature.name()),
+                                email: try_to_string(signature.email()),
+                            },
+                            date: ISOUtcDate::from_unix(commit.time().seconds()),
+                            summary: try_to_string(commit.summary()),
+                            rev: commit_oid,
+                        });
+                        last_oid = Some(blob_oid);
+                    }
                 }
             }
         }
 
+        ret.reverse();
+
         Ok(ret)
+    }
+
+    fn entry_to_article_info(&self, entry: &git2::TreeEntry) -> Option<(ArticleTitle, String)> {
+        let title = entry
+            .name()
+            .and_then(|path| ArticleTitle::from_path(path).ok())?;
+
+        let obj = entry.to_object(&self.repo).ok()?;
+        let content = obj
+            .as_blob()
+            .and_then(|blob| std::str::from_utf8(blob.content()).ok())?;
+
+        Some((title, content.to_owned()))
+    }
+
+    pub fn traverse_head_tree(
+        &'a self,
+        mut f: impl FnMut(ArticleTitle, String),
+    ) -> Result<(), super::Error> {
+        let head = self.head()?;
+        let tree = head.peel_to_commit()?.tree()?;
+
+        tree.walk(TreeWalkMode::PreOrder, |_some_str, entry| {
+            if let Some((title, content)) = self.entry_to_article_info(entry) {
+                println!("{}", title);
+                f(title, content)
+            }
+
+            TreeWalkResult::Ok
+        })?;
+
+        Ok(())
     }
 }
 

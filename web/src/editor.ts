@@ -5,6 +5,7 @@ import {
     ArticleInfo,
     Model,
     RenderedMarkdown,
+    Diff,
 } from "./types";
 import { $, stripPrefix, $e } from "./util";
 
@@ -165,10 +166,15 @@ function addFileInput(model: Model) {
     document.querySelector("#file-list").append(listElt);
 }
 
-function switchTo(model: Model, targetButton: HTMLElement): boolean {
+enum TabState {
+    Active,
+    Inactive,
+}
+
+function switchTo(model: Model, targetButton: HTMLElement): TabState {
     const targetTab = model.tabs.get(targetButton);
     if (!targetTab.classList.contains("hidden")) {
-        return false;
+        return TabState.Active;
     }
     targetButton.classList.add("active");
 
@@ -181,24 +187,38 @@ function switchTo(model: Model, targetButton: HTMLElement): boolean {
         }
     }
 
-    return true;
+    return TabState.Inactive;
 }
 
-function showDiff(model: Model, text: string) {
+function showDiff(model: Model, diff: Diff) {
     if (model.diffEditor === null) {
         const diffDiv = $("#diff-editor");
         document.querySelector("#editor").classList.add("hidden");
         diffDiv.classList.remove("hidden");
-        model.diffEditor = monaco.editor.createDiffEditor(diffDiv);
+        model.diffEditor = monaco.editor.createDiffEditor(diffDiv, {
+            enableSplitViewResizing: true,
+        });
     }
     model.activeEditor = model.diffEditor.getModifiedEditor();
 
-    const modified = monaco.editor.createModel(text);
+    let original: monaco.editor.ITextModel;
+    let modified: monaco.editor.ITextModel;
+    switch (diff.type) {
+        case "merged":
+            original = monaco.editor.createModel(model.editor.getValue());
+            modified = monaco.editor.createModel(diff.merged);
+            model.diffEditor.updateOptions({ renderSideBySide: false });
+            break;
+        case "conflict":
+            original = monaco.editor.createModel(diff.ours);
+            modified = monaco.editor.createModel(diff.theirs);
+            model.diffEditor.updateOptions({ renderSideBySide: true });
+            break;
+    }
 
-    // FIXME: logic error
     model.diffEditor.setModel({
-        original: monaco.editor.createModel(model.editor.getValue()),
-        modified: modified,
+        original,
+        modified,
     });
 }
 
@@ -239,8 +259,8 @@ window.addEventListener("load", async () => {
     });
 
     $("#preview-button").addEventListener("click", async (evt) => {
-        const needsRender = switchTo(model, evt.target as HTMLElement);
-        if (needsRender) {
+        const oldTabState = switchTo(model, evt.target as HTMLElement);
+        if (oldTabState === TabState.Inactive) {
             const article = document.querySelector("#preview-tab > article");
             article.innerHTML = "Rendering preview";
             const response = await sendJson<RenderedMarkdown>(
@@ -273,14 +293,17 @@ window.addEventListener("load", async () => {
                 case "noConflict":
                     window.location.href = "/wiki/" + model.title;
                     break;
-                case "merged":
+                default:
                     model.articleInfo = {
                         ...model.articleInfo,
-                        oid: body.oid,
-                        rev: body.rev,
+                        oid: resp.oid,
+                        rev: resp.rev,
                     };
-                    notify("Merge Conflict", "Your changes were auto-merged");
-                    showDiff(model, resp.merged);
+                    notify(
+                        "Merge Conflict",
+                        "Your changes were auto-merged, click on save to accept",
+                    );
+                    showDiff(model, resp);
                     break;
             }
         }

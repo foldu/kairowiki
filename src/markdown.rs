@@ -93,8 +93,8 @@ impl MarkdownRenderer {
             .and_then(|lang| syntect::parsing::Scope::new(&format!("source.{}", lang)).ok())
             .and_then(|scope| self.syntax_set.find_syntax_by_scope(scope))
             .unwrap_or_else(|| {
-                // `source` always exists in the default SyntaxSet
-                let source_scope = Scope::new("source").unwrap();
+                // `text.plain` always exists in the default SyntaxSet
+                let source_scope = Scope::new("text.plain").unwrap();
                 self.syntax_set.find_syntax_by_scope(source_scope).unwrap()
             });
 
@@ -220,3 +220,4 @@ where
         }
     }
 }
+
