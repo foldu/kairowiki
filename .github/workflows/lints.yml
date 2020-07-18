@@ -13,7 +13,7 @@ jobs:
       - uses: EmbarkStudios/cargo-deny-action@v1
 
   rustfmt-clippy:
-    name: rusfmt+clippy check
+    name: rusfmt check
     runs-on: ubuntu-18.04
     steps:
       - uses: actions/checkout@v2
@@ -23,16 +23,10 @@ jobs:
           profile: minimal
           toolchain: nightly
           override: true
-          components: rustfmt, clippy
+          components: rustfmt
 
       - name: Run cargo fmt
         uses: actions-rs/cargo@v1
         with:
           command: fmt
           args: --all -- --check
-
-      - name: Run cargo clippy
-        uses: actions-rs/cargo@v1
-        with:
-          command: clippy
-          args: -- -D warnings
