@@ -10,30 +10,6 @@ macro_rules! render {
     };
 }
 
-macro_rules! routes {
-    ($x:expr, $($y:expr),*) => { {
-            let filter = boxed_on_debug!($x);
-            $(
-                let filter = boxed_on_debug!(filter.or($y));
-            )*
-            filter
-    } }
-}
-
-#[cfg(debug_assertions)]
-macro_rules! boxed_on_debug {
-    ($x:expr) => {
-        $x.boxed()
-    };
-}
-
-#[cfg(not(debug_assertions))]
-macro_rules! boxed_on_debug {
-    ($x:expr) => {
-        $x
-    };
-}
-
 macro_rules! sql_file {
     ($ident:expr) => {
         include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/sql/", $ident, ".sql"))
