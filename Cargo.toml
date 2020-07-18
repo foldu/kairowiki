@@ -9,11 +9,11 @@ license = "Unlicense OR MIT"
 
 [dependencies]
 anyhow = "1.0.31"
-askama = "0.10.1"
+askama = "0.10.2"
 async-trait = "0.1.36"
-blake3 = "0.3.4"
+blake3 = "0.3.5"
 bstr = { version = "0.2.13", default-features = false, features = ["std"] }
-bytes = "0.5.5"
+bytes = "0.5.6"
 cookie = "0.14.1"
 derive_more = "0.99.9"
 envy = "0.4.1"
@@ -36,7 +36,7 @@ time = "0.2.16"
 tokio = { version = "0.2.21", features = ["rt-threaded", "sync", "signal"] }
 tracing = "0.1.16"
 tracing-futures = "0.2.4"
-tracing-subscriber = "0.2.7"
+tracing-subscriber = "0.2.8"
 tree_magic = "0.2.3"
 urlencoding = "1.1.1"
 url = { version = "2.1.1", features = ["serde"] }
@@ -51,7 +51,7 @@ default-features = false
 features = ["sqlite", "runtime-tokio", "macros", "offline"]
 
 [dependencies.openssl]
-version = "0.10.29"
+version = "0.10.30"
 features = [
     "vendored"
 ]

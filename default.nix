@@ -6,6 +6,8 @@
 , mime-types
 , makeWrapper
 , callPackage
+, lld_10
+, perl
 }:
 
 let
@@ -32,11 +34,13 @@ naersk.buildPackage {
   MIME_TYPES_PATH = mimeTypesFile;
   release = !debug;
   doCheck = debug;
-  buildInputs = [
+  nativeBuildInputs = [
     openssl
     sqlite
     pkg-config
     makeWrapper
+    lld_10
+    perl
   ];
   postInstall = ''
     mkdir -p "$out/usr/lib/kairowiki/static"

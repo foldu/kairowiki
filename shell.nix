@@ -7,8 +7,8 @@ let
 in
 pkgs.mkShell rec {
   buildInputs = with pkgs; [
-    openssl
     pkg-config
+    openssl
     sqlite
     yarn
   ];
