@@ -77,4 +77,3 @@ pub fn wiki_article(
         WikiArticle::from_title(&ctx.config.git_repo, title)
     })
 }
-

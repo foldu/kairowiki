@@ -71,4 +71,3 @@ pub async fn history(
         history: &history,
     }))
 }
-

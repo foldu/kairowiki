@@ -133,4 +133,3 @@ fn get_as_blob<'a>(
         Err(_) => Ok(None),
     }
 }
-

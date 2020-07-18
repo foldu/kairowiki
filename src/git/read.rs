@@ -143,4 +143,3 @@ pub struct HistoryEntry {
     pub summary: String,
     pub rev: git2::Oid,
 }
-

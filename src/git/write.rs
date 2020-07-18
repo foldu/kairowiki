@@ -138,4 +138,3 @@ impl<'a> RepoLock<'a> {
         }
     }
 }
-

@@ -181,4 +181,3 @@ fn can_find_mime_extensions() {
         .unwrap_or_else(|| crate::context::default_mime_types_path());
     find_mime_extensions(&mime_path, &[mime::IMAGE_JPEG]).unwrap();
 }
-

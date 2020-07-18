@@ -12,4 +12,3 @@ pub struct Register {
     pub password: String,
     pub password_check: String,
 }
-

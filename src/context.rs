@@ -221,4 +221,3 @@ fn default_mime_types() -> SeparatedList<mime::Mime> {
 fn default_index_dir() -> PathBuf {
     PathBuf::from("/data/index")
 }
-

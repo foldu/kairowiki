@@ -134,4 +134,3 @@ impl PasswordHash {
         .unwrap()
     }
 }
-

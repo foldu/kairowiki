@@ -129,4 +129,3 @@ pub async fn logout(
         .body("".to_string())
         .unwrap())
 }
-

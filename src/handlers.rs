@@ -82,4 +82,3 @@ pub async fn handle_rejection(
         )
     })
 }
-
