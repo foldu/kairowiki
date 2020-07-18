@@ -5,8 +5,8 @@ on:
   pull_request:
 
 jobs:
-  test: cargo-deny check
-    name: Test build
+  test:
+    name: cargo-deny check
     runs-on: ubuntu-18.04
     steps:
       - uses: actions/checkout@v2
