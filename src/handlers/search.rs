@@ -16,7 +16,7 @@ pub async fn search_repo(
 
     Ok(render!(templates::SearchResults {
         query: &search_query.query,
-        wiki: ctx.wiki(&account),
+        wiki: ctx.wiki_with_search(&account, &search_query.query),
         results: &found,
     }))
 }

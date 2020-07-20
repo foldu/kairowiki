@@ -64,6 +64,20 @@ impl Context {
             login_status: account,
             name: &self.config.wiki_name,
             logo: "/static/logo.svg",
+            search_term: "",
+        }
+    }
+
+    pub fn wiki_with_search<'a>(
+        &'a self,
+        account: &'a Option<UserAccount>,
+        search_term: &'a str,
+    ) -> Wiki {
+        Wiki {
+            login_status: account,
+            name: &self.config.wiki_name,
+            logo: "/static/logo.svg",
+            search_term,
         }
     }
 
@@ -98,6 +112,7 @@ pub struct Wiki<'a> {
     pub name: &'a str,
     pub logo: &'a str,
     pub login_status: &'a Option<UserAccount>,
+    pub search_term: &'a str,
 }
 
 #[derive(serde::Deserialize)]
