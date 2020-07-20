@@ -32,7 +32,6 @@ impl Context {
             pool.clone(),
             file_storage::Config {
                 storage_path: cfg.storage_path.clone(),
-                // TODO: make this configurable
                 allowed_mime_types: &cfg.allowed_mime_types.0,
                 route: "/storage".to_owned(),
                 mime_types_path: &cfg.mime_types_path,
@@ -64,7 +63,6 @@ impl Context {
         Wiki {
             login_status: account,
             name: &self.config.wiki_name,
-            footer: &self.config.footer,
             logo: "/static/logo.svg",
         }
     }
@@ -98,7 +96,6 @@ pub struct DataInner {
 
 pub struct Wiki<'a> {
     pub name: &'a str,
-    pub footer: &'a str,
     pub logo: &'a str,
     pub login_status: &'a Option<UserAccount>,
 }
@@ -122,9 +119,6 @@ pub struct Config {
 
     #[serde(default = "default_wiki_name")]
     pub wiki_name: String,
-
-    #[serde(default = "default_footer")]
-    pub footer: String,
 
     #[serde(default = "default_home_wiki_page")]
     pub home_wiki_page: String,
@@ -182,10 +176,6 @@ fn default_static_dir() -> PathBuf {
 
 fn default_wiki_name() -> String {
     "kairowiki".to_owned()
-}
-
-fn default_footer() -> String {
-    "kairowiki".into()
 }
 
 fn default_home_wiki_page() -> String {

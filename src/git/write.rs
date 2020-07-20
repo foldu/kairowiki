@@ -1,26 +1,62 @@
 use super::{RepoPath, TreePath};
 use crate::{api, api::EditSubmit, article::WikiArticle, serde::Oid, user_storage::UserAccount};
-use git2::{Repository, ResetType, Signature};
+use git2::{IndexEntry, Repository, ResetType, Signature};
+use std::{convert::TryFrom, os::unix::prelude::*, time::SystemTime};
 use tokio::sync::MutexGuard;
+
+trait IndexExt {
+    fn new_for_path<P>(path: P, file_size: u32) -> Self
+    where
+        P: AsRef<std::path::Path>;
+}
+
+impl IndexExt for git2::IndexEntry {
+    fn new_for_path<P>(path: P, file_size: u32) -> Self
+    where
+        P: AsRef<std::path::Path>,
+    {
+        let now = SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            // cannot fail
+            .unwrap();
+
+        let timestamp = git2::IndexTime::new(
+            i32::try_from(now.as_secs())
+                .expect("It is the year 2038 and libgit2 still uses signed 32 bit timestamps"),
+            0,
+        );
+
+        git2::IndexEntry {
+            ctime: timestamp,
+            mtime: timestamp,
+            dev: 0,
+            ino: 0,
+            mode: 0o100644,
+            uid: nix::unistd::getuid().as_raw(),
+            gid: nix::unistd::getgid().as_raw(),
+            file_size,
+            id: git2::Oid::zero(),
+            flags: 0,
+            flags_extended: 0,
+            path: path.as_ref().as_os_str().as_bytes().to_vec(),
+        }
+    }
+}
 
 pub(super) fn write_and_commit_file(
     repo: &Repository,
-    previous: Option<(git2::Commit, &git2::Tree)>,
+    previous_commit: Option<&git2::Commit>,
     commit_info: &CommitInfo,
     new: &str,
 ) -> Result<(), git2::Error> {
-    let article_oid = repo.blob(new.as_bytes())?;
-    //let previous_tree = previous.map(|(_, ref tree)| tree);
-    let mut tree_builder = repo.treebuilder(match previous {
-        Some((_, ref tree)) => Some(tree),
-        None => None,
-    })?;
-    tree_builder.insert(commit_info.path.as_ref(), article_oid, 0o100644)?;
-    let tree_oid = tree_builder.write()?;
-    let tree = repo.find_tree(tree_oid).unwrap();
+    let path = commit_info.path.as_ref();
+    let mut index = repo.index()?;
+    index.add_frombuffer(&IndexEntry::new_for_path(path, 0), new.as_bytes())?;
+    let tree_oid = index.write_tree()?;
+    let tree = repo.find_tree(tree_oid)?;
 
-    let mut parent_commits = vec![];
-    if let Some((ref commit, _)) = previous {
+    let mut parent_commits = smallvec::SmallVec::<[&git2::Commit; 1]>::new();
+    if let Some(commit) = previous_commit {
         parent_commits.push(commit);
     }
 
@@ -116,8 +152,8 @@ impl<'a> RepoLock<'a> {
                     let entry = index.get_path(tree_path.as_ref(), 0).unwrap();
 
                     let merged = self.repo.find_blob(entry.id)?;
-                    // TODO: handle if the TreeEntry is a subtree(directory)
 
+                    // TODO: handle if the TreeEntry is a subtree(directory)
                     Ok(api::Commit::Merged {
                         // TODO: handle binary files
                         merged: String::from_utf8(merged.content().to_vec()).unwrap(),
@@ -129,7 +165,7 @@ impl<'a> RepoLock<'a> {
             None => {
                 write_and_commit_file(
                     &self.repo,
-                    Some((head_commit, &head_tree)),
+                    Some(&head_commit),
                     &commit_info,
                     &edit.markdown,
                 )?;
