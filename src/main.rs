@@ -201,6 +201,7 @@ async fn run() -> Result<(), anyhow::Error> {
         stream::select(term, int).next().await;
     };
 
+    // FIXME: don't panic when port already in use
     let addr = std::net::SocketAddr::new(ctx.config.ip_addr, ctx.config.port);
     let (_, server) = warp::serve(routes).bind_with_graceful_shutdown(addr, shutdown);
 
