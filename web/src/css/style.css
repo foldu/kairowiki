@@ -92,6 +92,10 @@ body > * {
     margin-bottom: 0.5rem;
 }
 
+.rendered-markdown {
+    word-wrap: break-word;
+}
+
 button:hover {
     background: lightgray;
 }
@@ -125,7 +129,7 @@ pre {
     align-items: center;
 }
 
-#wiki-article-head a {
+#wiki-article-head > h1 > a {
     text-decoration: none;
     color: black;
 }
@@ -142,7 +146,7 @@ pre {
     display: flex;
     align-content: center;
     justify-content: center;
-    font-size: 1rem;
+    /*font-size: 1rem;*/
 }
 
 nav {
@@ -258,6 +262,7 @@ footer {
 
 #commit-msg {
     flex-grow: 1;
+    margin-left: 1rem;
 }
 
 #notifications {
@@ -269,10 +274,11 @@ footer {
     right: 4em;
     top: 2em;
     list-style: none;
+    background: white;
 }
 
 #notifications > li {
-    min-width: 30em;
+    min-width: 20rem;
     border: dotted 1px;
     padding: 1em;
 }
@@ -285,7 +291,7 @@ footer {
     padding: 4px;
 }
 
-.text-content img {
+.rendered-markdown img {
     max-height: 800px;
     max-width: 400px;
 }
@@ -302,4 +308,18 @@ footer {
 
 .rev {
     font-family: Iosevka, Fira Mono, Monaco, monospace;
+}
+
+#menu {
+    display: flex;
+    align-content: center;
+    justify-content: center;
+}
+
+#menu form {
+    padding-left: 4px;
+}
+
+#search-results ul {
+    list-style-type: none;
 }

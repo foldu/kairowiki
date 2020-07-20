@@ -1,11 +1,32 @@
 use crate::{
-    article::WikiArticle, context::Context, serde::Oid, templates, user_storage::UserAccount,
+    article::WikiArticle, context::Context, relative_url::RelativeUrl, serde::Oid, templates,
+    user_storage::UserAccount,
 };
 use warp::{reject::Rejection, Reply};
 
 #[derive(serde::Deserialize)]
 pub struct EntryQuery {
     rev: Option<Oid>,
+}
+
+pub fn add_article_form(ctx: Context, account: UserAccount) -> impl Reply {
+    render!(templates::AddArticle {
+        wiki: ctx.wiki(&Some(account)),
+    })
+}
+
+pub fn add_article(
+    _ctx: Context,
+    _account: UserAccount,
+    add_article_form: crate::forms::AddArticle,
+) -> impl Reply {
+    let url = RelativeUrl::builder("/edit")
+        .unwrap()
+        .element(&add_article_form.title)
+        .build();
+    println!("{}", url.as_ref());
+    let url = warp::http::Uri::from_maybe_shared(url.as_ref().to_owned()).unwrap();
+    Ok(warp::redirect(url))
 }
 
 pub async fn show_entry(
@@ -45,15 +66,11 @@ pub async fn show_entry(
     }))
 }
 
-pub async fn edit(
-    ctx: Context,
-    article: WikiArticle,
-    account: UserAccount,
-) -> Result<impl Reply, Rejection> {
-    Ok(render!(templates::WikiEdit {
+pub fn edit(ctx: Context, article: WikiArticle, account: UserAccount) -> impl Reply {
+    render!(templates::WikiEdit {
         wiki: ctx.wiki(&Some(account)),
         title: article.title.as_ref()
-    }))
+    })
 }
 
 pub async fn history(

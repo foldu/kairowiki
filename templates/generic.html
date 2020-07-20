@@ -14,7 +14,7 @@
 <body>
   <nav>
     <a href="/">
-      <img src="{{wiki.logo}}" alt="logo" height="100px">
+      <img src="{{wiki.logo}}" alt="logo">
     </a>
     <form id="searchbox" method="GET" action="/search">
       <input type="search" name="query" placeholder="Search">
@@ -22,9 +22,12 @@
     </form>
     {% match wiki.login_status %}
     {% when Some with(account) %}
-    <form method="POST" action="/logout">
-      <button type="submit">Logout</button>
-    </form>
+    <div id="menu">
+      <a href="/add_article" class="button">Add article</a>
+      <form method="POST" action="/logout">
+        <button type="submit">Logout</button>
+      </form>
+    </div>
     {% when None %}
     <a href="/login" class="button">Login</a>
     {% endmatch %}

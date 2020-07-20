@@ -17,7 +17,9 @@ pub struct Error;
 impl<'a> Builder<'a> {
     pub fn element(mut self, elt: &impl std::fmt::Display) -> Self {
         let path = self.path.to_mut();
-        write!(path, "/{}", elt).unwrap();
+        // FIXME: useless allocation
+        let encoded = urlencoding::encode(&elt.to_string());
+        write!(path, "/{}", encoded).unwrap();
         self
     }
 

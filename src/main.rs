@@ -73,7 +73,7 @@ async fn run() -> Result<(), anyhow::Error> {
     let edit = edit_route
         .clone()
         .and(warp::get())
-        .and_then(handlers::wiki::edit);
+        .map(handlers::wiki::edit);
 
     let history = warp::path("history")
         .and(warp::get())
@@ -151,6 +151,19 @@ async fn run() -> Result<(), anyhow::Error> {
         .and(warp::get())
         .and_then(handlers::api::article_info);
 
+    let add_article = warp::path!("add_article").and(ctx_filter.clone());
+    let add_article_form = add_article
+        .clone()
+        .and(warp::get())
+        .and(login_required.clone())
+        .map(handlers::wiki::add_article_form);
+    let add_article = add_article
+        .and(warp::post())
+        .and(login_required.clone())
+        .and(form_size_limit)
+        .and(warp::filters::body::form())
+        .map(handlers::wiki::add_article);
+
     let user = login_form
         .boxed()
         .or(register_form.boxed().or(register_post.boxed()))
@@ -163,8 +176,9 @@ async fn run() -> Result<(), anyhow::Error> {
     let api = preview
         .boxed()
         .or(article_info.boxed().or(edit_submit.boxed()));
+    let add_article = add_article.boxed().or(add_article_form.boxed());
 
-    let routes = home.or(user.or(wiki)).or(api.or(files));
+    let routes = home.or(user.or(wiki)).or(api.or(files)).or(add_article);
 
     let domain = ctx.config.domain.as_ref().cloned().unwrap_or_else(|| {
         url::Url::parse(&format!("http://localhost:{}", ctx.config.port)).unwrap()
