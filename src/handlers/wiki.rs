@@ -37,12 +37,17 @@ pub async fn show_entry(
 ) -> Result<impl Reply, Rejection> {
     // TODO: add rendering cache
     let body = match query.rev {
-        None => tokio::task::block_in_place(|| match ctx.index.get_article(&article.title) {
-            Some(cont) => ctx.markdown_renderer.render(&cont),
-            None => format!(
+        None => tokio::task::block_in_place(|| match ctx.index.get_article(&article, &ctx.repo) {
+            Ok(Some(cont)) => ctx.markdown_renderer.render(&cont),
+            Ok(None) => format!(
                 "Article with title {} not found, click on edit to create it",
                 article.title.as_ref()
             ),
+            // FIXME:
+            Err(e) => {
+                tracing::error!("{}", e);
+                String::new()
+            }
         }),
         Some(rev) => {
             tokio::task::block_in_place(|| ctx.repo.read()?.article_at_rev(rev.0, &article.path))
@@ -78,9 +83,10 @@ pub async fn history(
     article: WikiArticle,
     account: Option<UserAccount>,
 ) -> Result<impl Reply, Rejection> {
-    let history =
-        tokio::task::block_in_place(|| ctx.repo.read().and_then(|repo| repo.history(&article)))
-            .map_err(warp::reject::custom)?;
+    let history = tokio::task::block_in_place(|| {
+        ctx.repo.read().and_then(|repo| repo.history(&article.path))
+    })
+    .map_err(warp::reject::custom)?;
 
     Ok(render!(templates::History {
         wiki: ctx.wiki(&account),

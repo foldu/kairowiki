@@ -1,6 +1,6 @@
-use super::{RepoPath, TreePath};
-use crate::{api, api::EditSubmit, article::WikiArticle, serde::Oid, user_storage::UserAccount};
+use crate::{api, api::EditSubmit, article::ArticlePath, serde::Oid, user_storage::UserAccount};
 use git2::{IndexEntry, Repository, ResetType, Signature};
+use smallvec::SmallVec;
 use std::{convert::TryFrom, os::unix::prelude::*, time::SystemTime};
 use tokio::sync::MutexGuard;
 
@@ -55,7 +55,7 @@ pub(super) fn write_and_commit_file(
     let tree_oid = index.write_tree()?;
     let tree = repo.find_tree(tree_oid)?;
 
-    let mut parent_commits = smallvec::SmallVec::<[&git2::Commit; 1]>::new();
+    let mut parent_commits = SmallVec::<[_; 1]>::new();
     if let Some(commit) = previous_commit {
         parent_commits.push(commit);
     }
@@ -73,13 +73,13 @@ pub(super) fn write_and_commit_file(
 }
 
 pub(super) struct CommitInfo<'a> {
-    pub path: TreePath<'a>,
+    pub path: &'a ArticlePath,
     pub signature: git2::Signature<'a>,
     pub msg: &'a str,
 }
 
 pub struct RepoLock<'a> {
-    pub(super) path: &'a RepoPath,
+    //pub(super) path: &'a RepoPath,
     pub(super) repo: MutexGuard<'a, Repository>,
 }
 
@@ -92,16 +92,14 @@ fn read_entry(repo: &git2::Repository, ent: git2::IndexEntry) -> Result<String, 
 impl<'a> RepoLock<'a> {
     pub fn commit_article(
         &self,
-        article: &WikiArticle,
+        article_path: &ArticlePath,
         account: &UserAccount,
         edit: &EditSubmit,
     ) -> Result<api::Commit, super::Error> {
-        let tree_path = self.path.tree_path(&article.path);
-
         let signature = Signature::now(&account.name, &account.email).unwrap();
 
         let commit_info = CommitInfo {
-            path: tree_path,
+            path: &article_path,
             signature,
             msg: &edit.commit_msg,
         };
@@ -110,7 +108,7 @@ impl<'a> RepoLock<'a> {
         let head_commit = head.peel_to_commit().unwrap();
         let head_tree = head_commit.tree()?;
 
-        let head_article_oid = super::get_tree_path(&head_tree, &tree_path)?.map(|art| art.id());
+        let head_article_oid = super::get_tree_path(&head_tree, &article_path)?.map(|art| art.id());
         let current_oid = match (head_article_oid, edit.oid) {
             // somebody changed the article while editing
             (Some(current), Some(ancestor)) if current != ancestor.0 => Some(current),
@@ -126,7 +124,7 @@ impl<'a> RepoLock<'a> {
                 let ancestor_tree = ancestor_commit.tree()?;
                 let new_blob = self.repo.blob(edit.markdown.as_bytes())?;
                 let mut new_tree = self.repo.treebuilder(Some(&head_tree))?;
-                new_tree.insert(tree_path.as_ref(), new_blob, 0o100644)?;
+                new_tree.insert(article_path.as_ref(), new_blob, 0o100644)?;
                 let new_tree = self.repo.find_tree(new_tree.write()?)?;
 
                 let index = self
@@ -149,7 +147,7 @@ impl<'a> RepoLock<'a> {
                         rev: Oid(head_commit.id()),
                     })
                 } else {
-                    let entry = index.get_path(tree_path.as_ref(), 0).unwrap();
+                    let entry = index.get_path(article_path.as_ref(), 0).unwrap();
 
                     let merged = self.repo.find_blob(entry.id)?;
 

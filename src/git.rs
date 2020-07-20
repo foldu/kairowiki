@@ -1,11 +1,10 @@
 pub mod read;
-mod repo_path;
 pub mod write;
 
 pub use read::HistoryEntry;
 
+use crate::article::ArticlePath;
 use git2::Repository;
-use repo_path::{RepoPath, TreePath};
 use std::path::PathBuf;
 use tokio::sync::Mutex;
 
@@ -22,18 +21,17 @@ pub enum Error {
 impl warp::reject::Reject for Error {}
 
 pub struct Repo {
-    path: RepoPath,
+    path: PathBuf,
     repo: Mutex<Repository>,
 }
 
 impl Repo {
     pub fn open_or_init(path: PathBuf, home_page: &str) -> Result<Self, Error> {
-        let repo_path = RepoPath::new(path.clone());
-        let repo = match Repository::open(repo_path.as_ref()) {
+        let repo_path = path.clone();
+        let repo = match Repository::open(&repo_path) {
             Err(e) if e.code() == git2::ErrorCode::NotFound => {
-                let repo = Repository::init(repo_path.as_ref())?;
+                let repo = Repository::init(&repo_path)?;
                 let article = crate::article::WikiArticle::from_title(
-                    &repo_path.as_ref(),
                     crate::article::ArticleTitle::new(home_page.to_owned()),
                 );
 
@@ -41,7 +39,7 @@ impl Repo {
                     &repo,
                     None,
                     &write::CommitInfo {
-                        path: repo_path.tree_path(&article.path),
+                        path: &article.path,
                         signature: git2::Signature::now("system", "system").unwrap(),
                         msg: "Initial commit",
                     },
@@ -54,35 +52,21 @@ impl Repo {
         };
 
         match repo {
-            Ok(repo) => {
-                // when current worktree clean update it on push
-                // TODO: check if this actually works the way I think it does
-                repo.config()
-                    // FIXME: handle error
-                    .and_then(|mut cfg| {
-                        cfg.set_str("receive.denyCurrentBranch", "updateInstead")
-                    })?;
-
-                Ok(Self {
-                    path: RepoPath::new(path),
-                    repo: Mutex::new(repo),
-                })
-            }
+            Ok(repo) => Ok(Self {
+                path,
+                repo: Mutex::new(repo),
+            }),
             Err(e) => Err(Error::RepoOpen { path, err: e }),
         }
     }
 
     pub fn read(&self) -> Result<read::ReadOnly, Error> {
-        let repo = self.path.open()?;
-        Ok(read::ReadOnly {
-            repo,
-            repo_path: &self.path,
-        })
+        let repo = Repository::open(&self.path)?;
+        Ok(read::ReadOnly { repo })
     }
 
     pub async fn write(&self) -> write::RepoLock<'_> {
         write::RepoLock {
-            path: &self.path,
             repo: self.repo.lock().await,
         }
     }
@@ -98,7 +82,7 @@ fn repo_head(repo: &Repository) -> Result<Option<git2::Reference<'_>>, git2::Err
 
 fn get_tree_path<'a>(
     tree: &'a git2::Tree,
-    path: &TreePath,
+    path: &ArticlePath,
 ) -> Result<Option<git2::TreeEntry<'a>>, git2::Error> {
     match tree.get_path(path.as_ref()) {
         Ok(ent) => Ok(Some(ent)),
@@ -109,7 +93,7 @@ fn get_tree_path<'a>(
 
 fn get_blob_oid<'a>(
     tree: &'a git2::Tree,
-    tree_path: &TreePath,
+    tree_path: &ArticlePath,
 ) -> Result<Option<git2::Oid>, Error> {
     match get_tree_path(&tree, tree_path)? {
         Some(ent) if ent.kind() == Some(git2::ObjectType::Blob) => Ok(Some(ent.id())),
@@ -120,7 +104,7 @@ fn get_blob_oid<'a>(
 fn get_as_blob<'a>(
     repo: &'a Repository,
     tree: &git2::Tree,
-    path: &TreePath,
+    path: &ArticlePath,
 ) -> Result<Option<git2::Blob<'a>>, git2::Error> {
     let ent = match get_tree_path(tree, path)? {
         Some(ent) => ent,

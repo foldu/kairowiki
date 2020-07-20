@@ -55,7 +55,7 @@ async fn run() -> Result<(), anyhow::Error> {
     let home = root.map(move || warp::redirect(home_url.clone()));
 
     let wiki = warp::get().and(warp::path("wiki"));
-    let wiki_article = crate::article::wiki_article(ctx.clone());
+    let wiki_article = crate::article::wiki_article();
     let wiki_home = wiki
         .and(warp::path::end())
         .map(|| warp::redirect(Uri::from_static("/")));

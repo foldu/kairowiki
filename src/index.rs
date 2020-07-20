@@ -1,5 +1,9 @@
-use crate::article::ArticleTitle;
-use std::{path::Path, time::Instant};
+use crate::article::{ArticleTitle, WikiArticle};
+use std::{
+    path::Path,
+    sync::atomic::{AtomicBool, Ordering},
+    time::Instant,
+};
 use tantivy::{
     collector::TopDocs,
     directory::MmapDirectory,
@@ -37,12 +41,13 @@ pub struct Index {
     reader: IndexReader,
     writer: Mutex<IndexWriter>,
     schema: Schema,
+    is_rebuilding: AtomicBool,
 }
 
 impl Index {
     pub async fn open(
         index_path: impl AsRef<Path>,
-        repo: &crate::git::read::ReadOnly<'_>,
+        repo: &crate::git::read::ReadOnly,
     ) -> Result<Self, Error> {
         let (index, schema) = tokio::task::block_in_place(|| -> Result<_, Error> {
             let index_path = index_path.as_ref();
@@ -69,6 +74,7 @@ impl Index {
             schema,
             reader,
             writer: Mutex::new(writer),
+            is_rebuilding: AtomicBool::new(false),
         };
 
         ret.rebuild(repo).await?;
@@ -76,7 +82,13 @@ impl Index {
         Ok(ret)
     }
 
-    pub async fn rebuild(&self, repo: &crate::git::read::ReadOnly<'_>) -> Result<(), Error> {
+    pub async fn rebuild(&self, repo: &crate::git::read::ReadOnly) -> Result<(), Error> {
+        if !self
+            .is_rebuilding
+            .compare_and_swap(false, true, Ordering::SeqCst)
+        {
+            return Ok(());
+        }
         let start_time = Instant::now();
         tracing::info!("Starting reindex");
         let mut writer = self.writer.lock().await;
@@ -99,26 +111,36 @@ impl Index {
     }
 
     // TODO: use slow path fetch from repo when reindexing
-    pub fn get_article(&self, title: &ArticleTitle) -> Option<String> {
+    pub fn get_article(
+        &self,
+        article: &WikiArticle,
+        repo: &crate::git::Repo,
+    ) -> Result<Option<String>, crate::git::Error> {
+        if self.is_rebuilding.load(Ordering::SeqCst) {
+            let repo = repo.read()?;
+            let head = repo.head()?.target().unwrap();
+            return repo.article_at_rev(head, &article.path);
+        }
+
         let searcher = self.reader.searcher();
-        let term = Term::from_field_text(self.schema.title, title.as_ref());
+        let term = Term::from_field_text(self.schema.title, article.title.as_ref());
         let term_query = TermQuery::new(term, IndexRecordOption::Basic);
         let results = searcher
             .search(&term_query, &TopDocs::with_limit(1))
             .unwrap();
 
         if results.is_empty() {
-            None
+            Ok(None)
         } else {
             let addr = results[0].1;
             let doc = searcher.doc(addr).unwrap();
-            Some(
+            Ok(Some(
                 doc.get_first(self.schema.content)
                     .unwrap()
                     .text()
                     .unwrap()
                     .to_owned(),
-            )
+            ))
         }
     }
 

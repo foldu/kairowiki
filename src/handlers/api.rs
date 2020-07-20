@@ -22,7 +22,7 @@ pub async fn edit_submit(
 ) -> Result<impl warp::Reply, warp::Rejection> {
     let repo = ctx.repo.write().await;
 
-    let resp = tokio::task::block_in_place(|| repo.commit_article(&article, &account, &edit))
+    let resp = tokio::task::block_in_place(|| repo.commit_article(&article.path, &account, &edit))
         .map_err(warp::reject::custom)?;
 
     if let crate::api::Commit::NoConflict = resp {
@@ -43,7 +43,7 @@ pub async fn article_info(
     let info = tokio::task::block_in_place(|| -> Result<_, crate::git::Error> {
         let repo = ctx.repo.read()?;
         let head = repo.head()?;
-        let oid = repo.oid_for_article(&head, &article)?;
+        let oid = repo.oid_for_article(&head, &article.path)?;
 
         let commit_id = head.peel_to_commit()?.id();
         Ok((oid, commit_id))
