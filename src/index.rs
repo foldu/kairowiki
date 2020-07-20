@@ -110,7 +110,6 @@ impl Index {
         Ok(())
     }
 
-    // TODO: use slow path fetch from repo when reindexing
     pub fn get_article(
         &self,
         article: &WikiArticle,
