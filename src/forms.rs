@@ -13,3 +13,8 @@ pub struct Register {
     pub password_check: String,
 }
 
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub struct AddArticle {
+    pub title: String,
+}

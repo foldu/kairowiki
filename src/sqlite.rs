@@ -21,10 +21,10 @@ pub async fn open(path: &str, max_connections: u32) -> Result<sqlx::SqlitePool, 
                 source: e,
             })?;
     }
-    let url = format!("sqlite://{}", path);
-    sqlx::SqlitePool::builder()
-        .max_size(max_connections)
-        .build(&url)
+
+    sqlx::pool::PoolOptions::new()
+        .max_connections(max_connections)
+        .connect_with(sqlx::sqlite::SqliteConnectOptions::new().filename(path))
         .await
         .map_err(|source| ConnectionError::Connect {
             path: path.to_owned(),

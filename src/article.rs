@@ -1,6 +1,5 @@
 use std::{
-    ffi::{OsStr, OsString},
-    os::unix::prelude::*,
+    ffi::OsStr,
     path::{Path, PathBuf},
 };
 use warp::Filter;
@@ -14,16 +13,8 @@ pub struct WikiArticle {
 pub struct ArticlePath(PathBuf);
 
 impl ArticlePath {
-    pub fn from_title(root: impl AsRef<Path>, title: &ArticleTitle) -> Self {
-        let root = root.as_ref().as_os_str();
-
-        let mut path = Vec::with_capacity(root.len() + "/".len() + title.len() + ".md".len());
-        path.extend(root.as_bytes());
-        path.push(b'/');
-        path.extend(title.as_bytes());
-        path.extend(b".md");
-
-        Self(PathBuf::from(OsString::from_vec(path)))
+    pub fn from_title(title: &ArticleTitle) -> Self {
+        Self(Path::new(title.as_ref()).with_extension("md"))
     }
 }
 
@@ -31,7 +22,7 @@ impl ArticlePath {
 pub struct ArticleTitle(String);
 
 impl ArticleTitle {
-    pub fn from_path(path: impl AsRef<Path>) -> Result<Self, Error> {
+    pub(crate) fn from_path(path: impl AsRef<Path>) -> Result<Self, Error> {
         let path = path.as_ref();
         if path.extension() != Some(OsStr::new("md")) {
             return Err(Error::InvalidExtension);
@@ -50,9 +41,9 @@ impl ArticleTitle {
 }
 
 impl WikiArticle {
-    pub fn from_title(root: impl AsRef<Path>, title: ArticleTitle) -> Self {
+    pub fn from_title(title: ArticleTitle) -> Self {
         Self {
-            path: ArticlePath::from_title(root, &title),
+            path: ArticlePath::from_title(&title),
             title,
         }
     }
@@ -70,11 +61,9 @@ pub enum Error {
 impl warp::reject::Reject for Error {}
 
 pub fn wiki_article(
-    ctx: crate::context::Context,
 ) -> impl warp::Filter<Extract = (WikiArticle,), Error = std::convert::Infallible> + Clone {
     warp::path::tail().map(move |tail: warp::path::Tail| {
         let title = ArticleTitle::new(urlencoding::decode(tail.as_str()).unwrap());
-        WikiArticle::from_title(&ctx.config.git_repo, title)
+        WikiArticle::from_title(title)
     })
 }
-

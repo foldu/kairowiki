@@ -81,6 +81,12 @@ pub struct RegisterRefresh<'a> {
 }
 
 #[derive(Template)]
+#[template(path = "add_article.html")]
+pub struct AddArticle<'a> {
+    pub wiki: Wiki<'a>,
+}
+
+#[derive(Template)]
 #[template(path = "headline_start.html")]
 pub struct HeadlineStart<'a> {
     pub strength: u32,
@@ -131,4 +137,3 @@ impl<'a> Error<'a> {
         }
     }
 }
-

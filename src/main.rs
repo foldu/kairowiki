@@ -10,8 +10,10 @@ mod forms;
 mod git;
 mod handlers;
 mod index;
+mod ipc;
 mod markdown;
 mod migrations;
+mod post_receive_hook;
 mod relative_url;
 mod serde;
 mod session;
@@ -55,7 +57,7 @@ async fn run() -> Result<(), anyhow::Error> {
     let home = root.map(move || warp::redirect(home_url.clone()));
 
     let wiki = warp::get().and(warp::path("wiki"));
-    let wiki_article = crate::article::wiki_article(ctx.clone());
+    let wiki_article = crate::article::wiki_article();
     let wiki_home = wiki
         .and(warp::path::end())
         .map(|| warp::redirect(Uri::from_static("/")));
@@ -73,7 +75,7 @@ async fn run() -> Result<(), anyhow::Error> {
     let edit = edit_route
         .clone()
         .and(warp::get())
-        .and_then(handlers::wiki::edit);
+        .map(handlers::wiki::edit);
 
     let history = warp::path("history")
         .and(warp::get())
@@ -151,6 +153,19 @@ async fn run() -> Result<(), anyhow::Error> {
         .and(warp::get())
         .and_then(handlers::api::article_info);
 
+    let add_article = warp::path!("add_article").and(ctx_filter.clone());
+    let add_article_form = add_article
+        .clone()
+        .and(warp::get())
+        .and(login_required.clone())
+        .map(handlers::wiki::add_article_form);
+    let add_article = add_article
+        .and(warp::post())
+        .and(login_required.clone())
+        .and(form_size_limit)
+        .and(warp::filters::body::form())
+        .map(handlers::wiki::add_article);
+
     let user = login_form
         .boxed()
         .or(register_form.boxed().or(register_post.boxed()))
@@ -163,8 +178,9 @@ async fn run() -> Result<(), anyhow::Error> {
     let api = preview
         .boxed()
         .or(article_info.boxed().or(edit_submit.boxed()));
+    let add_article = add_article.boxed().or(add_article_form.boxed());
 
-    let routes = home.or(user.or(wiki)).or(api.or(files));
+    let routes = home.or(user.or(wiki)).or(api.or(files)).or(add_article);
 
     let domain = ctx.config.domain.as_ref().cloned().unwrap_or_else(|| {
         url::Url::parse(&format!("http://localhost:{}", ctx.config.port)).unwrap()
@@ -201,6 +217,7 @@ async fn run() -> Result<(), anyhow::Error> {
         stream::select(term, int).next().await;
     };
 
+    // FIXME: don't panic when port already in use
     let addr = std::net::SocketAddr::new(ctx.config.ip_addr, ctx.config.port);
     let (_, server) = warp::serve(routes).bind_with_graceful_shutdown(addr, shutdown);
 
@@ -213,32 +230,49 @@ async fn run() -> Result<(), anyhow::Error> {
 
 fn init_logging() {
     // FIXME: hack for default log level=info
-    match std::env::var_os("RUST_LOG") {
-        Some(_) => (),
-        None => {
-            std::env::set_var("RUST_LOG", "info");
-        }
-    };
+    if let None = std::env::var_os("RUST_LOG") {
+        std::env::set_var("RUST_LOG", "info");
+    }
     tracing_subscriber::fmt()
         .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
         .init()
 }
 
-fn main() {
-    let mut rt = runtime::Builder::new()
-        .threaded_scheduler()
-        .enable_all()
-        .build()
-        .unwrap();
+fn print_trace_and_exit(e: anyhow::Error) {
+    let mut chain = e.chain();
+    if let Some(head) = chain.next() {
+        eprintln!("{}", head);
+    }
+    for cause in chain {
+        eprintln!("Caused by: {}", cause);
+    }
 
-    if let Err(e) = rt.block_on(run()) {
-        let mut chain = e.chain();
-        if let Some(head) = chain.next() {
-            eprintln!("{}", head);
+    std::process::exit(1);
+}
+
+fn main() {
+    if let Some(cmd) = std::env::args_os().skip(1).next() {
+        let cmd = cmd.to_string_lossy();
+        let func = match cmd.as_ref() {
+            "post-receive-hook" => crate::post_receive_hook::run,
+            other => {
+                eprintln!("Invalid subcommand `{}`, valid: `post-receive-hook`", other);
+                std::process::exit(1);
+            }
+        };
+
+        if let Err(e) = func() {
+            print_trace_and_exit(e);
         }
-        for cause in chain {
-            eprintln!("Caused by: {}", cause);
+    } else {
+        let mut rt = runtime::Builder::new()
+            .threaded_scheduler()
+            .enable_all()
+            .build()
+            .unwrap();
+
+        if let Err(e) = rt.block_on(run()) {
+            print_trace_and_exit(e);
         }
-        std::process::exit(1);
     }
 }

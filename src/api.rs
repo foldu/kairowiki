@@ -48,4 +48,3 @@ pub struct EditSubmit {
 pub struct RenderedMarkdown {
     pub rendered: String,
 }
-

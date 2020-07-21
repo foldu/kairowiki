@@ -1,19 +1,19 @@
-use super::RepoPath;
-use crate::article::{ArticlePath, ArticleTitle, WikiArticle};
+use crate::{
+    article::{ArticlePath, ArticleTitle},
+    serde::Oid,
+};
 use git2::{Repository, TreeWalkMode, TreeWalkResult};
 
-pub struct ReadOnly<'a> {
-    pub(super) repo_path: &'a RepoPath,
+pub struct ReadOnly {
     pub(super) repo: Repository,
 }
 
-impl<'a> ReadOnly<'a> {
+impl ReadOnly {
     pub fn article_at_rev(
-        &'a self,
+        &self,
         rev: git2::Oid,
         path: &ArticlePath,
-    ) -> Result<Option<String>, super::Error> {
-        let tree_path = self.repo_path.tree_path(path);
+    ) -> Result<Option<(Oid, String)>, super::Error> {
         let commit = match self.repo.find_commit(rev) {
             // FIXME: does it return NotFound on not found commit?
             Err(e) if e.code() == git2::ErrorCode::NotFound => {
@@ -25,29 +25,21 @@ impl<'a> ReadOnly<'a> {
         let commit = commit?;
 
         let tree = commit.tree()?;
-        let blob = super::get_as_blob(&self.repo, &tree, &tree_path)?;
-        Ok(blob.and_then(|blob| String::from_utf8(blob.content().to_vec()).ok()))
+        match super::get_as_blob(&self.repo, &tree, &path)? {
+            // FIXME: return error when blob not utf-8
+            Some(blob) => {
+                let content = String::from_utf8(blob.content().to_vec()).ok();
+                Ok(content.map(|content| (Oid(blob.id()), content)))
+            }
+            None => Ok(None),
+        }
     }
 
-    pub fn head(&'a self) -> Result<git2::Reference<'a>, super::Error> {
+    pub fn head(&self) -> Result<git2::Reference<'_>, super::Error> {
         Ok(super::repo_head(&self.repo)?.expect("Uninitialized repo"))
     }
 
-    pub fn oid_for_article(
-        &'a self,
-        rev: &'a git2::Reference,
-        article: &WikiArticle,
-    ) -> Result<Option<git2::Oid>, super::Error> {
-        let commit = rev.peel_to_commit().unwrap();
-        let tree = commit.tree()?;
-        let tree_path = self.repo_path.tree_path(&article.path);
-
-        super::get_blob_oid(&tree, &tree_path)
-    }
-
-    pub fn history(&'a self, article: &WikiArticle) -> Result<Vec<HistoryEntry>, super::Error> {
-        let tree_path = self.repo_path.tree_path(&article.path);
-
+    pub fn history(&self, article_path: &ArticlePath) -> Result<Vec<HistoryEntry>, super::Error> {
         let mut rev_walk = self.repo.revwalk()?;
         rev_walk.set_sorting(git2::Sort::TOPOLOGICAL | git2::Sort::REVERSE)?;
         rev_walk.push_head()?;
@@ -58,7 +50,7 @@ impl<'a> ReadOnly<'a> {
             let commit_oid = commit_oid?;
             if let Ok(commit) = self.repo.find_commit(commit_oid) {
                 let tree = commit.tree()?;
-                if let Ok(Some(blob_oid)) = super::get_blob_oid(&tree, &tree_path) {
+                if let Ok(Some(blob_oid)) = super::get_blob_oid(&tree, &article_path) {
                     if Some(blob_oid) != last_oid {
                         let signature = commit.author();
                         ret.push(HistoryEntry {
@@ -95,7 +87,7 @@ impl<'a> ReadOnly<'a> {
     }
 
     pub fn traverse_head_tree(
-        &'a self,
+        &self,
         mut f: impl FnMut(ArticleTitle, String),
     ) -> Result<(), super::Error> {
         let head = self.head()?;
@@ -143,4 +135,3 @@ pub struct HistoryEntry {
     pub summary: String,
     pub rev: git2::Oid,
 }
-

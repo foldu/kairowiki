@@ -48,4 +48,3 @@ pub async fn upload(
     let url = upload_(ctx, form).await.map_err(warp::reject::custom)?;
     Ok(warp::reply::json(&Reply { url: url.as_ref() }))
 }
-

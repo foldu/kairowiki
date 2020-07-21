@@ -252,4 +252,3 @@ impl std::convert::TryFrom<ClearCookie> for HeaderValue {
         Ok(HeaderValue::try_from(cookie).unwrap())
     }
 }
-

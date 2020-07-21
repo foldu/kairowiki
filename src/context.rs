@@ -32,7 +32,6 @@ impl Context {
             pool.clone(),
             file_storage::Config {
                 storage_path: cfg.storage_path.clone(),
-                // TODO: make this configurable
                 allowed_mime_types: &cfg.allowed_mime_types.0,
                 route: "/storage".to_owned(),
                 mime_types_path: &cfg.mime_types_path,
@@ -44,9 +43,7 @@ impl Context {
         let theme_path = cfg.static_dir.join("hl.css");
 
         let repo_read = repo.read()?;
-        let index = Index::open(&cfg.index_dir, &repo_read)
-            .await
-            .context("Can't set up search index")?;
+        let index = Index::open(&cfg.index_dir, &repo_read).context("Can't set up search index")?;
 
         Ok(Self(Arc::new(DataInner {
             repo,
@@ -62,10 +59,23 @@ impl Context {
 impl Context {
     pub fn wiki<'a>(&'a self, account: &'a Option<UserAccount>) -> Wiki {
         Wiki {
-            login_status: account.into(),
+            login_status: account,
             name: &self.config.wiki_name,
-            footer: &self.config.footer,
             logo: "/static/logo.svg",
+            search_term: "",
+        }
+    }
+
+    pub fn wiki_with_search<'a>(
+        &'a self,
+        account: &'a Option<UserAccount>,
+        search_term: &'a str,
+    ) -> Wiki {
+        Wiki {
+            login_status: account,
+            name: &self.config.wiki_name,
+            logo: "/static/logo.svg",
+            search_term,
         }
     }
 
@@ -98,9 +108,9 @@ pub struct DataInner {
 
 pub struct Wiki<'a> {
     pub name: &'a str,
-    pub footer: &'a str,
     pub logo: &'a str,
     pub login_status: &'a Option<UserAccount>,
+    pub search_term: &'a str,
 }
 
 #[derive(serde::Deserialize)]
@@ -122,9 +132,6 @@ pub struct Config {
 
     #[serde(default = "default_wiki_name")]
     pub wiki_name: String,
-
-    #[serde(default = "default_footer")]
-    pub footer: String,
 
     #[serde(default = "default_home_wiki_page")]
     pub home_wiki_page: String,
@@ -184,10 +191,6 @@ fn default_wiki_name() -> String {
     "kairowiki".to_owned()
 }
 
-fn default_footer() -> String {
-    "kairowiki".into()
-}
-
 fn default_home_wiki_page() -> String {
     "kairowiki".to_string()
 }
@@ -221,4 +224,3 @@ fn default_mime_types() -> SeparatedList<mime::Mime> {
 fn default_index_dir() -> PathBuf {
     PathBuf::from("/data/index")
 }
-
