@@ -43,9 +43,7 @@ impl Context {
         let theme_path = cfg.static_dir.join("hl.css");
 
         let repo_read = repo.read()?;
-        let index = Index::open(&cfg.index_dir, &repo_read)
-            .await
-            .context("Can't set up search index")?;
+        let index = Index::open(&cfg.index_dir, &repo_read).context("Can't set up search index")?;
 
         Ok(Self(Arc::new(DataInner {
             repo,

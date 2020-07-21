@@ -1,4 +1,7 @@
-use crate::article::{ArticlePath, ArticleTitle};
+use crate::{
+    article::{ArticlePath, ArticleTitle},
+    serde::Oid,
+};
 use git2::{Repository, TreeWalkMode, TreeWalkResult};
 
 pub struct ReadOnly {
@@ -10,7 +13,7 @@ impl ReadOnly {
         &self,
         rev: git2::Oid,
         path: &ArticlePath,
-    ) -> Result<Option<String>, super::Error> {
+    ) -> Result<Option<(Oid, String)>, super::Error> {
         let commit = match self.repo.find_commit(rev) {
             // FIXME: does it return NotFound on not found commit?
             Err(e) if e.code() == git2::ErrorCode::NotFound => {
@@ -22,23 +25,18 @@ impl ReadOnly {
         let commit = commit?;
 
         let tree = commit.tree()?;
-        let blob = super::get_as_blob(&self.repo, &tree, &path)?;
-        Ok(blob.and_then(|blob| String::from_utf8(blob.content().to_vec()).ok()))
+        match super::get_as_blob(&self.repo, &tree, &path)? {
+            // FIXME: return error when blob not utf-8
+            Some(blob) => {
+                let content = String::from_utf8(blob.content().to_vec()).ok();
+                Ok(content.map(|content| (Oid(blob.id()), content)))
+            }
+            None => Ok(None),
+        }
     }
 
     pub fn head(&self) -> Result<git2::Reference<'_>, super::Error> {
         Ok(super::repo_head(&self.repo)?.expect("Uninitialized repo"))
-    }
-
-    pub fn oid_for_article(
-        &self,
-        rev: &git2::Reference,
-        article_path: &ArticlePath,
-    ) -> Result<Option<git2::Oid>, super::Error> {
-        let commit = rev.peel_to_commit().unwrap();
-        let tree = commit.tree()?;
-
-        super::get_blob_oid(&tree, &article_path)
     }
 
     pub fn history(&self, article_path: &ArticlePath) -> Result<Vec<HistoryEntry>, super::Error> {

@@ -26,11 +26,12 @@ pub async fn edit_submit(
         .map_err(warp::reject::custom)?;
 
     if let crate::api::Commit::NoConflict = resp {
-        ctx.index
-            .update_article(&article.title, &edit.markdown)
-            .await
-            // FIXME:
-            .unwrap();
+        tokio::task::block_in_place(|| {
+            ctx.index
+                .update_article(&article.title, &edit.markdown)
+                // FIXME:
+                .unwrap()
+        });
     }
 
     Ok(warp::reply::json(&resp))
@@ -42,21 +43,21 @@ pub async fn article_info(
 ) -> Result<impl warp::Reply, warp::Rejection> {
     let info = tokio::task::block_in_place(|| -> Result<_, crate::git::Error> {
         let repo = ctx.repo.read()?;
-        let head = repo.head()?;
-        let oid = repo.oid_for_article(&head, &article.path)?;
+        let head_commit_id = repo.head()?.target().unwrap();
+        let article_info = repo.article_at_rev(head_commit_id, &article.path)?;
 
-        let commit_id = head.peel_to_commit()?.id();
-        Ok((oid, commit_id))
+        Ok((article_info, head_commit_id))
     })
     .map_err(warp::reject::custom)?;
 
-    let markdown = tokio::fs::read_to_string(article.path.as_ref())
-        .await
-        .unwrap_or_else(|_| String::new());
+    let (oid, markdown) = match info.0 {
+        Some((oid, content)) => (Some(oid), content),
+        None => (None, String::new()),
+    };
 
     Ok(warp::reply::json(&crate::api::ArticleInfo {
         markdown,
-        oid: info.0.map(crate::serde::Oid),
+        oid,
         rev: crate::serde::Oid(info.1),
     }))
 }

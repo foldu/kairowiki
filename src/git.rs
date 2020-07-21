@@ -28,9 +28,9 @@ pub struct Repo {
 impl Repo {
     pub fn open_or_init(path: PathBuf, home_page: &str) -> Result<Self, Error> {
         let repo_path = path.clone();
-        let repo = match Repository::open(&repo_path) {
+        let repo = match Repository::open_bare(&repo_path) {
             Err(e) if e.code() == git2::ErrorCode::NotFound => {
-                let repo = Repository::init(&repo_path)?;
+                let repo = Repository::init_bare(&repo_path)?;
                 let article = crate::article::WikiArticle::from_title(
                     crate::article::ArticleTitle::new(home_page.to_owned()),
                 );
@@ -61,7 +61,7 @@ impl Repo {
     }
 
     pub fn read(&self) -> Result<read::ReadOnly, Error> {
-        let repo = Repository::open(&self.path)?;
+        let repo = Repository::open_bare(&self.path)?;
         Ok(read::ReadOnly { repo })
     }
 

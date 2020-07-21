@@ -35,7 +35,6 @@ pub async fn show_entry(
     account: Option<UserAccount>,
     query: EntryQuery,
 ) -> Result<impl Reply, Rejection> {
-    // TODO: add rendering cache
     let body = match query.rev {
         None => tokio::task::block_in_place(|| match ctx.index.get_article(&article, &ctx.repo) {
             Ok(Some(cont)) => ctx.markdown_renderer.render(&cont),
@@ -52,7 +51,7 @@ pub async fn show_entry(
         Some(rev) => {
             tokio::task::block_in_place(|| ctx.repo.read()?.article_at_rev(rev.0, &article.path))
                 .map_err(warp::reject::custom)?
-                .map(|cont| ctx.markdown_renderer.render(&cont))
+                .map(|(_, cont)| ctx.markdown_renderer.render(&cont))
                 .unwrap_or_else(|| {
                     // FIXME: maybe return a 404 error page here instead?
                     format!(

@@ -1,9 +1,6 @@
 use crate::article::{ArticleTitle, WikiArticle};
-use std::{
-    path::Path,
-    sync::atomic::{AtomicBool, Ordering},
-    time::Instant,
-};
+use parking_lot::Mutex;
+use std::{path::Path, time::Instant};
 use tantivy::{
     collector::TopDocs,
     directory::MmapDirectory,
@@ -11,7 +8,6 @@ use tantivy::{
     schema::{Field, IndexRecordOption, STORED, STRING, TEXT},
     IndexReader, IndexWriter, TantivyError, Term,
 };
-use tokio::sync::Mutex;
 
 #[derive(Copy, Clone)]
 pub struct Schema {
@@ -41,11 +37,10 @@ pub struct Index {
     reader: IndexReader,
     writer: Mutex<IndexWriter>,
     schema: Schema,
-    is_rebuilding: AtomicBool,
 }
 
 impl Index {
-    pub async fn open(
+    pub fn open(
         index_path: impl AsRef<Path>,
         repo: &crate::git::read::ReadOnly,
     ) -> Result<Self, Error> {
@@ -74,24 +69,17 @@ impl Index {
             schema,
             reader,
             writer: Mutex::new(writer),
-            is_rebuilding: AtomicBool::new(false),
         };
 
-        ret.rebuild(repo).await?;
+        ret.rebuild(repo)?;
 
         Ok(ret)
     }
 
-    pub async fn rebuild(&self, repo: &crate::git::read::ReadOnly) -> Result<(), Error> {
-        if !self
-            .is_rebuilding
-            .compare_and_swap(false, true, Ordering::SeqCst)
-        {
-            return Ok(());
-        }
+    pub fn rebuild(&self, repo: &crate::git::read::ReadOnly) -> Result<(), Error> {
         let start_time = Instant::now();
         tracing::info!("Starting reindex");
-        let mut writer = self.writer.lock().await;
+        let mut writer = self.writer.lock();
 
         writer.delete_all_documents()?;
 
@@ -115,10 +103,14 @@ impl Index {
         article: &WikiArticle,
         repo: &crate::git::Repo,
     ) -> Result<Option<String>, crate::git::Error> {
-        if self.is_rebuilding.load(Ordering::SeqCst) {
+        // TODO/FIXME: this should only be done if the entire index is rebuilding, not if it's
+        // just indexing a few docs. Does this even matter?
+        if self.writer.is_locked() {
             let repo = repo.read()?;
             let head = repo.head()?.target().unwrap();
-            return repo.article_at_rev(head, &article.path);
+            return repo
+                .article_at_rev(head, &article.path)
+                .map(|ret| ret.map(|(_, cont)| cont));
         }
 
         let searcher = self.reader.searcher();
@@ -143,9 +135,9 @@ impl Index {
         }
     }
 
-    pub async fn update_article(&self, title: &ArticleTitle, content: &str) -> Result<(), Error> {
+    pub fn update_article(&self, title: &ArticleTitle, content: &str) -> Result<(), Error> {
         let term = Term::from_field_text(self.schema.title, title.as_ref());
-        let mut writer = self.writer.lock().await;
+        let mut writer = self.writer.lock();
         writer.delete_term(term);
 
         let mut doc = tantivy::Document::new();
@@ -173,7 +165,6 @@ impl Index {
             .search(&query, &TopDocs::with_limit(ndocs))
             .unwrap();
 
-        // TODO: maybe add ellipsed contents of article?
         let mut found = Vec::with_capacity(ndocs);
         for (_score, addr) in results {
             let doc = searcher.doc(addr).unwrap();
@@ -186,6 +177,7 @@ impl Index {
 
             let content = doc.get_first(self.schema.content).unwrap().text().unwrap();
 
+            // TODO: end on sentence boundary for preview instead of just cutting it off
             let mut i = 200;
             let elided_content = loop {
                 // I hope this uses is_char_boundary

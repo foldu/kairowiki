@@ -1119,6 +1119,7 @@ dependencies = [
  "mime 0.3.16",
  "nix 0.17.0",
  "openssl",
+ "parking_lot",
  "pulldown-cmark",
  "rand 0.7.3",
  "regex",

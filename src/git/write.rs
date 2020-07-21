@@ -1,5 +1,5 @@
 use crate::{api, api::EditSubmit, article::ArticlePath, serde::Oid, user_storage::UserAccount};
-use git2::{IndexEntry, Repository, ResetType, Signature};
+use git2::{IndexEntry, Repository, Signature};
 use smallvec::SmallVec;
 use std::{convert::TryFrom, os::unix::prelude::*, time::SystemTime};
 use tokio::sync::MutexGuard;
@@ -60,7 +60,7 @@ pub(super) fn write_and_commit_file(
         parent_commits.push(commit);
     }
 
-    let commit_oid = repo.commit(
+    repo.commit(
         Some("HEAD"),
         &commit_info.signature,
         &commit_info.signature,
@@ -68,8 +68,8 @@ pub(super) fn write_and_commit_file(
         &tree,
         &parent_commits,
     )?;
-    let commit = repo.find_commit(commit_oid)?;
-    repo.reset(commit.as_object(), ResetType::Hard, None)
+
+    Ok(())
 }
 
 pub(super) struct CommitInfo<'a> {
