@@ -10,8 +10,10 @@ mod forms;
 mod git;
 mod handlers;
 mod index;
+mod ipc;
 mod markdown;
 mod migrations;
+mod post_receive_hook;
 mod relative_url;
 mod serde;
 mod session;
@@ -236,21 +238,41 @@ fn init_logging() {
         .init()
 }
 
-fn main() {
-    let mut rt = runtime::Builder::new()
-        .threaded_scheduler()
-        .enable_all()
-        .build()
-        .unwrap();
+fn print_trace_and_exit(e: anyhow::Error) {
+    let mut chain = e.chain();
+    if let Some(head) = chain.next() {
+        eprintln!("{}", head);
+    }
+    for cause in chain {
+        eprintln!("Caused by: {}", cause);
+    }
 
-    if let Err(e) = rt.block_on(run()) {
-        let mut chain = e.chain();
-        if let Some(head) = chain.next() {
-            eprintln!("{}", head);
+    std::process::exit(1);
+}
+
+fn main() {
+    if let Some(cmd) = std::env::args_os().skip(1).next() {
+        let cmd = cmd.to_string_lossy();
+        let func = match cmd.as_ref() {
+            "post-receive-hook" => crate::post_receive_hook::run,
+            other => {
+                eprintln!("Invalid subcommand `{}`, valid: `post-receive-hook`", other);
+                std::process::exit(1);
+            }
+        };
+
+        if let Err(e) = func() {
+            print_trace_and_exit(e);
         }
-        for cause in chain {
-            eprintln!("Caused by: {}", cause);
+    } else {
+        let mut rt = runtime::Builder::new()
+            .threaded_scheduler()
+            .enable_all()
+            .build()
+            .unwrap();
+
+        if let Err(e) = rt.block_on(run()) {
+            print_trace_and_exit(e);
         }
-        std::process::exit(1);
     }
 }
