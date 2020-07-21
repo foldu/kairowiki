@@ -44,20 +44,17 @@ impl Index {
         index_path: impl AsRef<Path>,
         repo: &crate::git::read::ReadOnly,
     ) -> Result<Self, Error> {
-        let (index, schema) = tokio::task::block_in_place(|| -> Result<_, Error> {
-            let index_path = index_path.as_ref();
+        let index_path = index_path.as_ref();
 
-            std::fs::create_dir_all(index_path)?;
-            let dir = MmapDirectory::open(index_path).map_err(TantivyError::from)?;
-            let mut schema = tantivy::schema::Schema::builder();
-            let title = schema.add_text_field("title", STRING | STORED);
-            let content = schema.add_text_field("content", TEXT | STORED);
-            let schema = schema.build();
+        std::fs::create_dir_all(index_path)?;
+        let dir = MmapDirectory::open(index_path).map_err(TantivyError::from)?;
+        let mut schema = tantivy::schema::Schema::builder();
+        let title = schema.add_text_field("title", STRING | STORED);
+        let content = schema.add_text_field("content", TEXT | STORED);
+        let schema = schema.build();
 
-            let index = tantivy::Index::open_or_create(dir, schema)?;
-            let schema = Schema { title, content };
-            Ok((index, schema))
-        })?;
+        let index = tantivy::Index::open_or_create(dir, schema)?;
+        let schema = Schema { title, content };
 
         let reader = index
             .reader_builder()
