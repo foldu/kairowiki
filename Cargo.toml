@@ -18,7 +18,7 @@ cookie = "0.14.1"
 derive_more = "0.99.9"
 envy = "0.4.1"
 futures-util = "0.3.5"
-git2 = { version = "0.13.6", default-features = false }
+git2 = { version = "0.13.8", default-features = false }
 hex = "0.4.2"
 itertools = "0.9.0"
 mime = "0.3.16"
