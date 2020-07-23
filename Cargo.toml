@@ -14,11 +14,11 @@ async-trait = "0.1.36"
 blake3 = "0.3.5"
 bstr = { version = "0.2.13", default-features = false, features = ["std"] }
 bytes = "0.5.6"
-cookie = "0.14.1"
+cookie = "0.14.2"
 derive_more = "0.99.9"
 envy = "0.4.1"
 futures-util = "0.3.5"
-git2 = { version = "0.13.6", default-features = false }
+git2 = { version = "0.13.8", default-features = false }
 hex = "0.4.2"
 itertools = "0.9.0"
 mime = "0.3.16"
@@ -34,8 +34,8 @@ syntect = { version = "4.2.0", default-features = false, features = ["html", "re
 tantivy = "0.12.0"
 thiserror = "1.0.20"
 time = "0.2.16"
-tokio = { version = "0.2.21", features = ["rt-threaded", "sync", "signal", "uds"] }
-tracing = "0.1.16"
+tokio = { version = "0.2.22", features = ["rt-threaded", "sync", "signal", "uds"] }
+tracing = "0.1.17"
 tracing-futures = "0.2.4"
 tracing-subscriber = "0.2.8"
 tree_magic_mini = "1.0.0"
@@ -43,7 +43,7 @@ urlencoding = "1.1.1"
 url = { version = "2.1.1", features = ["serde"] }
 uuid = { version = "0.8.1", features = ["v4"] }
 walkdir = "2.3.1"
-warp = { version = "0.2.3", default-features = false, features = ["multipart"] }
+warp = { version = "0.2.4", default-features = false, features = ["multipart"] }
 parking_lot = "0.11.0"
 
 [dependencies.sqlx]
