@@ -11,6 +11,9 @@ pkgs.mkShell rec {
     openssl
     sqlite
     yarn
+    lld_10
+    rust.rust-dev
+    perl
   ];
   MIME_TYPES_PATH = "${pkgs.mime-types}/etc/mime.types";
   RUSTFLAGS = "-C link-arg=-fuse-ld=lld";

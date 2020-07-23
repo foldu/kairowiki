@@ -320,6 +320,7 @@ footer {
     list-style-type: none;
     width: inherit;
 }
+
 #search-results ul li {
     padding-bottom: 0.5rem;
     border-bottom: black solid 1px;
@@ -327,6 +328,7 @@ footer {
 
 .title-link {
     font-size: 1.8rem;
+    padding-bottom: 0.5rem;
 }
 
 .article-preview {

@@ -9,11 +9,14 @@ let
       channel = "nightly";
     };
   rust = channel.rust;
+  rust-dev = rust.override {
+    extensions = [ "clippy-preview" "rustfmt-preview" "rust-src" ];
+  };
 in
 {
   naersk = pkgs.callPackage sources.naersk {
     rustc = rust;
     cargo = rust;
   };
-  inherit rust;
+  inherit rust rust-dev;
 }
