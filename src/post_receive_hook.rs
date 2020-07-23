@@ -13,7 +13,7 @@ pub fn run() -> Result<(), anyhow::Error> {
         let split = ln.split_whitespace().collect::<Vec<_>>();
         if let &[_parent_commit_id, _new_commit_id, "refs/heads/master"] = &split[..] {
             let _stream = UnixStream::connect("/tmp/test")
-                .context("Can't connect to server, is it running")?;
+                .context("Can't connect to server, is it running?")?;
         }
     }
 

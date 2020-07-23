@@ -73,6 +73,13 @@ impl Index {
         Ok(ret)
     }
 
+    fn create_doc(&self, title: &ArticleTitle, content: &str) -> tantivy::Document {
+        let mut doc = tantivy::Document::new();
+        doc.add_text(self.schema.title, title.as_ref());
+        doc.add_text(self.schema.content, &content);
+        doc
+    }
+
     pub fn rebuild(&self, repo: &crate::git::read::ReadOnly) -> Result<(), Error> {
         let start_time = Instant::now();
         tracing::info!("Starting reindex");
@@ -81,10 +88,7 @@ impl Index {
         writer.delete_all_documents()?;
 
         repo.traverse_head_tree(|title, content| {
-            let mut doc = tantivy::Document::new();
-            doc.add_text(self.schema.title, &title);
-            doc.add_text(self.schema.content, &content);
-            writer.add_document(doc);
+            writer.add_document(self.create_doc(&title, &content));
         })
         .map_err(Error::Rebuild)?;
 
@@ -137,10 +141,7 @@ impl Index {
         let mut writer = self.writer.lock();
         writer.delete_term(term);
 
-        let mut doc = tantivy::Document::new();
-        doc.add_text(self.schema.title, title.as_ref());
-        doc.add_text(self.schema.content, content.as_ref());
-        writer.add_document(doc);
+        writer.add_document(self.create_doc(title, content));
 
         writer.commit()?;
 
@@ -163,6 +164,13 @@ impl Index {
             .unwrap();
 
         let mut found = Vec::with_capacity(ndocs);
+        // NOTE: skip allocation of SnippetGenerator when nothing found
+        if results.is_empty() {
+            return Ok(found);
+        }
+
+        let snippet_gen =
+            tantivy::SnippetGenerator::create(&searcher, &query, self.schema.content)?;
         for (_score, addr) in results {
             let doc = searcher.doc(addr).unwrap();
             let title = doc
@@ -174,21 +182,9 @@ impl Index {
 
             let content = doc.get_first(self.schema.content).unwrap().text().unwrap();
 
-            // TODO: end on sentence boundary for preview instead of just cutting it off
-            let mut i = 200;
-            let elided_content = loop {
-                // I hope this uses is_char_boundary
-                match content.get(0..i) {
-                    Some(cont) => break cont,
-                    None => {
-                        i += 1;
-                    }
-                }
-            };
+            let snippet = snippet_gen.snippet(content).to_html();
 
-            let elided_content = elided_content.to_owned();
-
-            found.push((title, elided_content));
+            found.push((title, snippet));
         }
 
         Ok(found)

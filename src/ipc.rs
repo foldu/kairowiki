@@ -17,7 +17,7 @@ pub fn listen(sock_path: impl AsRef<Path>) -> Result<impl Stream<Item = ()>, std
                         return;
                     }
                 }
-                Err(e) => tracing::warn!("Dropped unix listener cxn: {}", e),
+                Err(e) => tracing::warn!("Ipc listener accept error: {}", e),
             }
         }
     });

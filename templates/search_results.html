@@ -11,7 +11,7 @@
       <div class="title-link">
         <a href="/wiki/{{ article.0 }}">{{ article.0 }}</a>
       </div>
-      <div class="article-preview">{{ article.1 }}</div>
+      <div class="article-preview">{{ article.1|safe }}</div>
     </li>
     {% endfor %}
     </ul>
