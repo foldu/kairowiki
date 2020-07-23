@@ -172,7 +172,7 @@ impl Index {
         let snippet_gen =
             tantivy::SnippetGenerator::create(&searcher, &query, self.schema.content)?;
         for (_score, addr) in results {
-            let doc = searcher.doc(addr).unwrap();
+            let doc = searcher.doc(addr)?;
             let title = doc
                 .get_first(self.schema.title)
                 .unwrap()

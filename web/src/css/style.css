@@ -60,10 +60,6 @@ body > * {
     margin: auto;
 }
 
-.text-content {
-    margin: auto;
-}
-
 .rendered-markdown > h1 > a,
 .rendered-markdown > h2 > a,
 .rendered-markdown > h3 > a,
@@ -322,4 +318,17 @@ footer {
 
 #search-results ul {
     list-style-type: none;
+    width: inherit;
+}
+#search-results ul li {
+    padding-bottom: 0.5rem;
+    border-bottom: black solid 1px;
+}
+
+.title-link {
+    font-size: 1.8rem;
+}
+
+.article-preview {
+    font-size: 1rem;
 }
