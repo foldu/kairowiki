@@ -334,3 +334,8 @@ footer {
 .article-preview {
     font-size: 1rem;
 }
+
+label.button input[type="file"] {
+    position: absolute;
+    top: -1000px;
+}

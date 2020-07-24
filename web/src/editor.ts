@@ -138,7 +138,7 @@ function addFileInput(model: Model) {
 
         const body = await resp.json();
 
-        fileInput.remove();
+        fileInput.parentElement.remove();
 
         listElt.append(
             $e("a", { href: body.url }, [$e("img", { src: body.url })]),
@@ -156,11 +156,13 @@ function addFileInput(model: Model) {
     };
 
     const listElt = $e("li", {}, [
-        $e("input", {
-            type: "file",
-            classList: "file-input",
-            onchange: uploadFile,
-        }),
+        $e("label", { classList: "button", textContent: "Upload" }, [
+            $e("input", {
+                type: "file",
+                classList: "file-input",
+                onchange: uploadFile,
+            }),
+        ]),
     ]);
 
     document.querySelector("#file-list").append(listElt);
