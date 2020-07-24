@@ -7,6 +7,12 @@ use std::{fmt::Display, marker::PhantomData, str::FromStr};
 #[derive(Copy, Clone)]
 pub struct Oid(pub git2::Oid);
 
+impl Oid {
+    pub fn parse(s: &str) -> Result<Self, git2::Error> {
+        s.parse().map(Self)
+    }
+}
+
 impl serde::Serialize for Oid {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where

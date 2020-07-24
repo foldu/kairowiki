@@ -5,7 +5,7 @@ pub use read::HistoryEntry;
 
 use crate::article::ArticlePath;
 use git2::Repository;
-use std::path::PathBuf;
+use std::{fs, io::Write, os::unix::prelude::*, path::PathBuf};
 use tokio::sync::Mutex;
 
 // FIXME: better error messages
@@ -16,6 +16,9 @@ pub enum Error {
 
     #[error("Could not open or init repository in path {}: {}", path.display(), err)]
     RepoOpen { path: PathBuf, err: git2::Error },
+
+    #[error("Can't create post-receive-hook: {}", _0)]
+    HookCreate(std::io::Error),
 }
 
 impl warp::reject::Reject for Error {}
@@ -45,6 +48,22 @@ impl Repo {
                     },
                     "This is the home page of your new wiki. Click on edit to put something here.",
                 )?;
+
+                let post_receive_hook =
+                    askama::Template::render(&crate::templates::PostReceiveHook::new()).unwrap();
+
+                let hook_path = path.join("hooks/post-receive");
+                let ret: Result<(), std::io::Error> = try {
+                    let mut file = fs::OpenOptions::new()
+                        .mode(0o755)
+                        .write(true)
+                        .create(true)
+                        .open(hook_path)?;
+                    file.write(post_receive_hook.as_bytes())?;
+                    file.flush()?;
+                };
+
+                ret.map_err(Error::HookCreate)?;
 
                 Ok(repo)
             }

@@ -137,3 +137,24 @@ impl<'a> Error<'a> {
         }
     }
 }
+
+#[derive(Template)]
+#[template(path = "post-receive-hook.sh", escape = "none")]
+pub struct PostReceiveHook {
+    binary_path: String,
+}
+
+impl PostReceiveHook {
+    pub fn new() -> Self {
+        use std::os::unix::prelude::*;
+        Self {
+            binary_path: String::from_utf8(
+                std::env::current_exe()
+                    .expect("Can't find current executable")
+                    .into_os_string()
+                    .into_vec(),
+            )
+            .expect("Binary path is not utf-8"),
+        }
+    }
+}

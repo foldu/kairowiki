@@ -95,7 +95,6 @@ impl ReadOnly {
 
         tree.walk(TreeWalkMode::PreOrder, |_some_str, entry| {
             if let Some((title, content)) = self.entry_to_article_info(entry) {
-                println!("{}", title);
                 f(title, content)
             }
 
