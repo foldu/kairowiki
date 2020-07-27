@@ -73,10 +73,14 @@ impl ReadOnly {
         Ok(ret)
     }
 
-    fn entry_to_article_info(&self, entry: &git2::TreeEntry) -> Option<(ArticleTitle, String)> {
+    fn entry_to_article_info(
+        &self,
+        entry: &git2::TreeEntry,
+        prefix: &str,
+    ) -> Option<(ArticleTitle, String)> {
         let title = entry
             .name()
-            .and_then(|path| ArticleTitle::from_path(path).ok())?;
+            .and_then(|path| ArticleTitle::from_path(format!("{}{}", prefix, path)).ok())?;
 
         let obj = entry.to_object(&self.repo).ok()?;
         let content = obj
@@ -93,8 +97,8 @@ impl ReadOnly {
     ) -> Result<(), super::Error> {
         let tree = commit.tree()?;
 
-        tree.walk(TreeWalkMode::PreOrder, |_some_str, entry| {
-            if let Some((title, content)) = self.entry_to_article_info(entry) {
+        tree.walk(TreeWalkMode::PreOrder, |prefix, entry| {
+            if let Some((title, content)) = self.entry_to_article_info(entry, prefix) {
                 f(title, content)
             }
 
