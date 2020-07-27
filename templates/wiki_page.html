@@ -5,7 +5,13 @@
 <main id="wiki-article" class="text-content">
   <div id="wiki-article-head">
     <h1 class="wiki-article-title">
-      <a href="/wiki/{{ title }}">{{ title }}</a>
+      {% for segment in title_segments %}
+      <a href="/wiki/{{ segment.relative_url }}">{{ segment.segment_name }}</a>
+      {% if loop.last %}
+      {% else %}
+        /
+      {% endif %}
+      {% endfor %}
     </h1>
     <div class="buttons">
       <a href="/edit/{{ title }}" class="button">Edit</a>

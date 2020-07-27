@@ -1,4 +1,4 @@
-use crate::context::Wiki;
+use crate::{article::ArticleTitle, context::Wiki};
 use askama::Template;
 
 #[derive(Template)]
@@ -8,10 +8,16 @@ pub struct WikiEdit<'a> {
     pub wiki: Wiki<'a>,
 }
 
+pub struct TitleSegment<'a> {
+    pub relative_url: &'a str,
+    pub segment_name: &'a str,
+}
+
 #[derive(Template)]
 #[template(path = "wiki_page.html")]
 pub struct WikiPage<'a> {
-    pub title: &'a str,
+    pub title_segments: &'a [TitleSegment<'a>],
+    pub title: &'a ArticleTitle,
     pub content: &'a str,
     pub wiki: Wiki<'a>,
 }

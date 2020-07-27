@@ -1116,6 +1116,7 @@ dependencies = [
  "futures-util",
  "git2",
  "hex",
+ "htmlescape",
  "itertools 0.9.0",
  "mime 0.3.16",
  "nix 0.17.0",

@@ -106,7 +106,7 @@ impl MarkdownRenderer {
     }
 
     fn highlight_block(&self, s: &str, language: Option<&str>) -> String {
-        format!("<pre>{}</pre>", self.highlight(s, language))
+        format!("<pre><code>{}</code></pre>", self.highlight(s, language))
     }
 }
 
