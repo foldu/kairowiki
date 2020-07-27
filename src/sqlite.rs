@@ -24,7 +24,11 @@ pub async fn open(path: &str, max_connections: u32) -> Result<sqlx::SqlitePool, 
 
     sqlx::pool::PoolOptions::new()
         .max_connections(max_connections)
-        .connect_with(sqlx::sqlite::SqliteConnectOptions::new().filename(path))
+        .connect_with(
+            sqlx::sqlite::SqliteConnectOptions::new()
+                .filename(path)
+                .create_if_missing(true),
+        )
         .await
         .map_err(|source| ConnectionError::Connect {
             path: path.to_owned(),
