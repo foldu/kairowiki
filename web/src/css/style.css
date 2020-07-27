@@ -222,9 +222,11 @@ footer {
 
 .editor {
     height: 600px;
+    border-bottom: solid black 1px;
 }
 
 #file-list {
+    padding-top: 20px;
     list-style-type: none;
     display: grid;
     grid-template-columns: repeat(2, 1fr);
