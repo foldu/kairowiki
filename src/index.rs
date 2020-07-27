@@ -68,7 +68,15 @@ impl Index {
             writer: Mutex::new(writer),
         };
 
-        ret.rebuild(repo)?;
+        let commit: Result<_, crate::git::Error> = try {
+            let head = repo.head()?;
+            let commit = head.peel_to_commit()?;
+            commit
+        };
+
+        let commit = commit.unwrap();
+
+        ret.rebuild(repo, &commit)?;
 
         Ok(ret)
     }
@@ -80,14 +88,18 @@ impl Index {
         doc
     }
 
-    pub fn rebuild(&self, repo: &crate::git::read::ReadOnly) -> Result<(), Error> {
+    pub fn rebuild(
+        &self,
+        repo: &crate::git::read::ReadOnly,
+        commit: &git2::Commit,
+    ) -> Result<(), Error> {
         let start_time = Instant::now();
         tracing::info!("Starting reindex");
         let mut writer = self.writer.lock();
 
         writer.delete_all_documents()?;
 
-        repo.traverse_head_tree(|title, content| {
+        repo.traverse_commit_tree(commit, |title, content| {
             writer.add_document(self.create_doc(&title, &content));
         })
         .map_err(Error::Rebuild)?;

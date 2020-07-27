@@ -86,12 +86,12 @@ impl ReadOnly {
         Some((title, content.to_owned()))
     }
 
-    pub fn traverse_head_tree(
+    pub fn traverse_commit_tree(
         &self,
+        commit: &git2::Commit,
         mut f: impl FnMut(ArticleTitle, String),
     ) -> Result<(), super::Error> {
-        let head = self.head()?;
-        let tree = head.peel_to_commit()?.tree()?;
+        let tree = commit.tree()?;
 
         tree.walk(TreeWalkMode::PreOrder, |_some_str, entry| {
             if let Some((title, content)) = self.entry_to_article_info(entry) {
@@ -102,6 +102,10 @@ impl ReadOnly {
         })?;
 
         Ok(())
+    }
+
+    pub fn find_commit(&self, oid: git2::Oid) -> Result<git2::Commit, super::Error> {
+        self.repo.find_commit(oid).map_err(Into::into)
     }
 }
 

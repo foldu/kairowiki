@@ -4,7 +4,7 @@ use serde::{
 };
 use std::{fmt::Display, marker::PhantomData, str::FromStr};
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, derive_more::Display)]
 pub struct Oid(pub git2::Oid);
 
 impl Oid {

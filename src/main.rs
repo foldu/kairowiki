@@ -36,15 +36,20 @@ async fn run() -> Result<(), anyhow::Error> {
     let ctx = context::Context::from_env().await?;
     let static_ = warp::path("static").and(warp::fs::dir(ctx.config.static_dir.clone()));
     // TODO: move this to context
+    // TODO: debouncing
     let mut update_stream = ipc::listen(ipc::SOCK_PATH).context("Could not listen on unix sock")?;
     tokio::task::spawn({
         let ctx = ctx.clone();
         async move {
-            while let Some(_update) = update_stream.next().await {
+            while let Some(update) = update_stream.next().await {
                 let ret = tokio::task::block_in_place(|| -> Result<_, anyhow::Error> {
                     tracing::info!("Detected push");
                     let repo = ctx.repo.read()?;
-                    ctx.index.rebuild(&repo)?;
+                    if let Ok(commit) = repo.find_commit(update.new_commit_id.0) {
+                        ctx.index.rebuild(&repo, &commit)?;
+                    } else {
+                        tracing::error!("Commit with id {} not found", update.new_commit_id);
+                    }
                     Ok(())
                 });
                 if let Err(e) = ret {
