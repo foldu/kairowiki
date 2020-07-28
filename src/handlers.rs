@@ -1,9 +1,9 @@
 pub mod api;
 pub mod auth;
 pub mod file_storage;
+pub mod root;
 pub mod search;
 pub mod wiki;
-pub mod root;
 
 use crate::{relative_url::RelativeUrl, templates};
 use warp::{http::StatusCode, Rejection};
