@@ -9,7 +9,7 @@
     {% for article in results %}
     <li>
       <div class="title-link">
-        <a href="/wiki/{{ article.title }}">{{ article.title_text|safe }}</a>
+        <a href="/wiki/{{ article.title }}">{{ article.title }}</a>
       </div>
       <div class="article-preview">{{ article.content_text|safe }}</div>
     </li>
