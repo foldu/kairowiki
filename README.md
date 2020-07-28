@@ -1,4 +1,18 @@
 # kairowiki [![Test](https://github.com/foldu/kairowiki/workflows/Test/badge.svg)](https://github.com/foldu/kairowiki/actions) [![](https://img.shields.io/docker/v/foldu/kairowiki)](https://hub.docker.com/r/foldu/kairowiki)
+## Dependencies
+- nix: `nix-shell`
+
+- macos:
+    - yarn
+    - rustup
+    - shared-mime-info
+    - sqlite
+    - pkg-config
+    - openssl
+    ```shell
+    rustup default nightly
+    ```
+
 ## Development
 ```shell
 source .env

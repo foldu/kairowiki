@@ -73,10 +73,14 @@ impl ReadOnly {
         Ok(ret)
     }
 
-    fn entry_to_article_info(&self, entry: &git2::TreeEntry) -> Option<(ArticleTitle, String)> {
+    fn entry_to_article_info(
+        &self,
+        entry: &git2::TreeEntry,
+        prefix: &str,
+    ) -> Option<(ArticleTitle, String)> {
         let title = entry
             .name()
-            .and_then(|path| ArticleTitle::from_path(path).ok())?;
+            .and_then(|path| ArticleTitle::from_path(format!("{}{}", prefix, path)).ok())?;
 
         let obj = entry.to_object(&self.repo).ok()?;
         let content = obj
@@ -86,16 +90,15 @@ impl ReadOnly {
         Some((title, content.to_owned()))
     }
 
-    pub fn traverse_head_tree(
+    pub fn traverse_commit_tree(
         &self,
+        commit: &git2::Commit,
         mut f: impl FnMut(ArticleTitle, String),
     ) -> Result<(), super::Error> {
-        let head = self.head()?;
-        let tree = head.peel_to_commit()?.tree()?;
+        let tree = commit.tree()?;
 
-        tree.walk(TreeWalkMode::PreOrder, |_some_str, entry| {
-            if let Some((title, content)) = self.entry_to_article_info(entry) {
-                println!("{}", title);
+        tree.walk(TreeWalkMode::PreOrder, |prefix, entry| {
+            if let Some((title, content)) = self.entry_to_article_info(entry, prefix) {
                 f(title, content)
             }
 
@@ -103,6 +106,10 @@ impl ReadOnly {
         })?;
 
         Ok(())
+    }
+
+    pub fn find_commit(&self, oid: git2::Oid) -> Result<git2::Commit, super::Error> {
+        self.repo.find_commit(oid).map_err(Into::into)
     }
 }
 

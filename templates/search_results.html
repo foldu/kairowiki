@@ -3,18 +3,20 @@
 {% block content %}
 <main id="search-results" class="flex-centered">
   {% if results.len() == 0 %}
+  <p>
     No article matching <a href="/edit/{{ query }}">{{ query }}</a> found, click on the link to create it.
+  </p>
   {% else %}
-    <ul>
+  <ul>
     {% for article in results %}
     <li>
       <div class="title-link">
-        <a href="/wiki/{{ article.0 }}">{{ article.0 }}</a>
+        <a href="/wiki/{{ article.title }}">{{ article.title }}</a>
       </div>
-      <div class="article-preview">{{ article.1 }}</div>
+      <div class="article-preview">{{ article.content_text|safe }}</div>
     </li>
     {% endfor %}
-    </ul>
+  </ul>
   {% endif %}
 </main>
 {% endblock %}

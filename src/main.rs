@@ -1,4 +1,4 @@
-#![feature(or_patterns)]
+#![feature(or_patterns, try_blocks)]
 #[macro_use]
 mod macros;
 mod api;
@@ -21,6 +21,7 @@ mod sqlite;
 mod templates;
 mod user_storage;
 
+use anyhow::Context;
 use futures_util::stream::{self, StreamExt};
 use tokio::{
     runtime,
@@ -34,9 +35,34 @@ async fn run() -> Result<(), anyhow::Error> {
     // FIXME: clean this up
     let ctx = context::Context::from_env().await?;
     let static_ = warp::path("static").and(warp::fs::dir(ctx.config.static_dir.clone()));
+    // TODO: move this to context
+    // TODO: debouncing
+    let mut update_stream = ipc::listen(ipc::SOCK_PATH).context("Could not listen on unix sock")?;
+    tokio::task::spawn({
+        let ctx = ctx.clone();
+        async move {
+            while let Some(update) = update_stream.next().await {
+                let ret = tokio::task::block_in_place(|| -> Result<_, anyhow::Error> {
+                    tracing::info!("Detected push");
+                    let repo = ctx.repo.read()?;
+                    if let Ok(commit) = repo.find_commit(update.new_commit_id.0) {
+                        ctx.index.rebuild(&repo, &commit)?;
+                    } else {
+                        tracing::error!("Commit with id {} not found", update.new_commit_id);
+                    }
+                    Ok(())
+                });
+                if let Err(e) = ret {
+                    tracing::error!("Failed to rebuild index: {}", e);
+                }
+            }
+        }
+    });
 
-    let ctx_ = ctx.clone();
-    let ctx_filter = warp::any().map(move || ctx_.clone());
+    let ctx_filter = warp::any().map({
+        let ctx = ctx.clone();
+        move || ctx.clone()
+    });
     let form_size_limit = warp::body::content_length_limit(1 << 10);
     let sessions = session::Sessions::new(std::time::Duration::from_secs(5 * 60));
     let login_required = session::login_required(sessions.clone());
@@ -106,7 +132,7 @@ async fn run() -> Result<(), anyhow::Error> {
     let login_post = login_path
         .and(warp::post())
         .and(ctx_filter.clone())
-        .and(login_optional)
+        .and(login_optional.clone())
         .and(sessions.clone())
         .and(form_size_limit)
         .and(warp::filters::body::form())
@@ -180,7 +206,16 @@ async fn run() -> Result<(), anyhow::Error> {
         .or(article_info.boxed().or(edit_submit.boxed()));
     let add_article = add_article.boxed().or(add_article_form.boxed());
 
-    let routes = home.or(user.or(wiki)).or(api.or(files)).or(add_article);
+    let wiki_root = warp::path!("root")
+        .and(warp::get())
+        .and(ctx_filter.clone())
+        .and(login_optional.clone())
+        .map(handlers::root::show_root);
+
+    let routes = home
+        .or(user.or(wiki))
+        .or(api.or(files))
+        .or(add_article.or(wiki_root));
 
     let domain = ctx.config.domain.as_ref().cloned().unwrap_or_else(|| {
         url::Url::parse(&format!("http://localhost:{}", ctx.config.port)).unwrap()
@@ -261,7 +296,13 @@ fn main() {
             }
         };
 
-        if let Err(e) = func() {
+        let mut rt = runtime::Builder::new()
+            .basic_scheduler()
+            .enable_all()
+            .build()
+            .unwrap();
+
+        if let Err(e) = rt.block_on(func()) {
             print_trace_and_exit(e);
         }
     } else {

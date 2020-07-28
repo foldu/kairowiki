@@ -51,6 +51,11 @@ pub(super) fn write_and_commit_file(
 ) -> Result<(), git2::Error> {
     let path = commit_info.path.as_ref();
     let mut index = repo.index()?;
+    if let Some(commit) = previous_commit {
+        let tree = commit.tree()?;
+        index.read_tree(&tree)?;
+    }
+
     index.add_frombuffer(&IndexEntry::new_for_path(path, 0), new.as_bytes())?;
     let tree_oid = index.write_tree()?;
     let tree = repo.find_tree(tree_oid)?;

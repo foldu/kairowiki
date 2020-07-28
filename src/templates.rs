@@ -1,4 +1,4 @@
-use crate::context::Wiki;
+use crate::{article::ArticleTitle, context::Wiki, index::SearchResult};
 use askama::Template;
 
 #[derive(Template)]
@@ -8,10 +8,16 @@ pub struct WikiEdit<'a> {
     pub wiki: Wiki<'a>,
 }
 
+pub struct TitleSegment<'a> {
+    pub relative_url: &'a str,
+    pub segment_name: &'a str,
+}
+
 #[derive(Template)]
 #[template(path = "wiki_page.html")]
 pub struct WikiPage<'a> {
-    pub title: &'a str,
+    pub title_segments: &'a [TitleSegment<'a>],
+    pub title: &'a ArticleTitle,
     pub content: &'a str,
     pub wiki: Wiki<'a>,
 }
@@ -71,7 +77,7 @@ impl<'a> Register<'a> {
 pub struct SearchResults<'a> {
     pub wiki: Wiki<'a>,
     pub query: &'a str,
-    pub results: &'a [(String, String)],
+    pub results: &'a [SearchResult],
 }
 
 #[derive(Template)]
@@ -136,4 +142,32 @@ impl<'a> Error<'a> {
             msg: "Not implemented",
         }
     }
+}
+
+#[derive(Template)]
+#[template(path = "post-receive-hook.sh", escape = "none")]
+pub struct PostReceiveHook {
+    binary_path: String,
+}
+
+impl PostReceiveHook {
+    pub fn new() -> Self {
+        use std::os::unix::prelude::*;
+        Self {
+            binary_path: String::from_utf8(
+                std::env::current_exe()
+                    .expect("Can't find current executable")
+                    .into_os_string()
+                    .into_vec(),
+            )
+            .expect("Binary path is not utf-8"),
+        }
+    }
+}
+
+#[derive(Template)]
+#[template(path = "wiki_root.html")]
+pub struct Root<'a> {
+    pub content: String,
+    pub wiki: Wiki<'a>,
 }

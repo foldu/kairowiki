@@ -1,7 +1,8 @@
 use crate::{
     article::WikiArticle, context::Context, relative_url::RelativeUrl, serde::Oid, templates,
-    user_storage::UserAccount,
+    templates::TitleSegment, user_storage::UserAccount,
 };
+use smallvec::SmallVec;
 use warp::{reject::Rejection, Reply};
 
 #[derive(serde::Deserialize)]
@@ -64,10 +65,32 @@ pub async fn show_entry(
     };
 
     Ok(render!(templates::WikiPage {
+        title_segments: &segment_title(article.title.as_ref()),
         title: &article.title,
         content: &body,
         wiki: ctx.wiki(&account),
     }))
+}
+
+fn segment_title(title: &str) -> SmallVec<[TitleSegment<'_>; 3]> {
+    let mut ret = SmallVec::new();
+    let mut last = None;
+    for (i, c) in title.chars().enumerate() {
+        if c == '/' {
+            ret.push(crate::templates::TitleSegment {
+                relative_url: &title[0..i],
+                segment_name: &title[last.unwrap_or(0)..i],
+            });
+            last = Some(i + 1);
+        }
+    }
+
+    ret.push(crate::templates::TitleSegment {
+        relative_url: &title[0..],
+        segment_name: &title[last.unwrap_or(0)..],
+    });
+
+    ret
 }
 
 pub fn edit(ctx: Context, article: WikiArticle, account: UserAccount) -> impl Reply {

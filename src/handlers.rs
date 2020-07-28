@@ -1,6 +1,7 @@
 pub mod api;
 pub mod auth;
 pub mod file_storage;
+pub mod root;
 pub mod search;
 pub mod wiki;
 

@@ -13,5 +13,8 @@
 - [x] isolate rendered markdown (csp should be ok enough?)
 - [x] get monaco web worker to work
 - [ ] json api errors for /api/*
-- [ ] Include git hook that tells the server to reindex after somebody pushed to the git repo
+- [x] Include git hook that tells the server to reindex after somebody pushed to the git repo
+- [ ] Figure out interaction of post-receive hook and docker
 - [ ] Make tantivy things configurable
+- [ ] Implement tree view of entire repo
+- [ ] Make upload thing in editor a styled label
