@@ -164,3 +164,10 @@ impl PostReceiveHook {
         }
     }
 }
+
+#[derive(Template)]
+#[template(path = "wiki_root.html")]
+pub struct Root<'a> {
+    pub content: String,
+    pub wiki: Wiki<'a>,
+}

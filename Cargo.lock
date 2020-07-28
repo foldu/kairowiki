@@ -1106,6 +1106,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "askama",
+ "askama_escape",
  "async-trait",
  "blake3",
  "bstr",
@@ -1122,6 +1123,7 @@ dependencies = [
  "nix 0.17.0",
  "openssl",
  "parking_lot",
+ "petgraph",
  "pulldown-cmark",
  "rand 0.7.3",
  "regex",

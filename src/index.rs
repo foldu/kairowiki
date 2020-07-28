@@ -168,6 +168,27 @@ impl Index {
         }
     }
 
+    pub fn titles(&self) -> Vec<String> {
+        let searcher = self.reader.searcher();
+        let results = searcher
+            .search(&tantivy::query::AllQuery, &TopDocs::with_limit(1000))
+            .unwrap();
+
+        let mut ret = Vec::with_capacity(results.len());
+        for (_, addr) in results {
+            let doc = searcher.doc(addr).unwrap();
+            let title = doc
+                .get_first(self.schema.title)
+                .unwrap()
+                .text()
+                .unwrap()
+                .to_string();
+            ret.push(title);
+        }
+
+        ret
+    }
+
     pub fn update_article(&self, title: &ArticleTitle, content: &str) -> Result<(), Error> {
         let term = Term::from_field_text(self.schema.title, title.as_ref());
         let mut writer = self.writer.lock();

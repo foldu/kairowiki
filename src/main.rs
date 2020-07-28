@@ -132,7 +132,7 @@ async fn run() -> Result<(), anyhow::Error> {
     let login_post = login_path
         .and(warp::post())
         .and(ctx_filter.clone())
-        .and(login_optional)
+        .and(login_optional.clone())
         .and(sessions.clone())
         .and(form_size_limit)
         .and(warp::filters::body::form())
@@ -206,7 +206,16 @@ async fn run() -> Result<(), anyhow::Error> {
         .or(article_info.boxed().or(edit_submit.boxed()));
     let add_article = add_article.boxed().or(add_article_form.boxed());
 
-    let routes = home.or(user.or(wiki)).or(api.or(files)).or(add_article);
+    let wiki_root = warp::path!("root")
+        .and(warp::get())
+        .and(ctx_filter.clone())
+        .and(login_optional.clone())
+        .map(handlers::root::show_root);
+
+    let routes = home
+        .or(user.or(wiki))
+        .or(api.or(files))
+        .or(add_article.or(wiki_root));
 
     let domain = ctx.config.domain.as_ref().cloned().unwrap_or_else(|| {
         url::Url::parse(&format!("http://localhost:{}", ctx.config.port)).unwrap()
