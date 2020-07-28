@@ -1,3 +1,5 @@
+mod title_segments_tokenizer;
+
 use crate::article::{ArticleTitle, WikiArticle};
 use parking_lot::Mutex;
 use std::{path::Path, time::Instant};
@@ -5,14 +7,17 @@ use tantivy::{
     collector::TopDocs,
     directory::MmapDirectory,
     query::{QueryParser, TermQuery},
-    schema::{Field, IndexRecordOption, STORED, STRING, TEXT},
-    IndexReader, IndexWriter, TantivyError, Term,
+    schema::{Field, IndexRecordOption, TextFieldIndexing, TextOptions, STORED, STRING, TEXT},
+    tokenizer::{LowerCaser, TextAnalyzer},
+    IndexReader, IndexWriter, SnippetGenerator, TantivyError, Term,
 };
+use title_segments_tokenizer::TitleSegmentsTokenizer;
 
 #[derive(Copy, Clone)]
 pub struct Schema {
     pub title: Field,
     pub content: Field,
+    pub title_segments: Field,
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -48,13 +53,32 @@ impl Index {
 
         std::fs::create_dir_all(index_path)?;
         let dir = MmapDirectory::open(index_path).map_err(TantivyError::from)?;
+
         let mut schema = tantivy::schema::Schema::builder();
-        let title = schema.add_text_field("title", STRING | STORED);
+        let title = schema.add_text_field("title", STRING);
         let content = schema.add_text_field("content", TEXT | STORED);
+
+        let text_field_indexing = TextFieldIndexing::default()
+            .set_tokenizer("title_segments")
+            .set_index_option(IndexRecordOption::WithFreqsAndPositions);
+        let text_options = TextOptions::default()
+            .set_indexing_options(text_field_indexing)
+            .set_stored();
+        let title_segments = schema.add_text_field("title_segments", text_options);
+
         let schema = schema.build();
 
         let index = tantivy::Index::open_or_create(dir, schema)?;
-        let schema = Schema { title, content };
+        index.tokenizers().register(
+            "title_segments",
+            TextAnalyzer::from(TitleSegmentsTokenizer).filter(LowerCaser),
+        );
+
+        let schema = Schema {
+            title,
+            content,
+            title_segments,
+        };
 
         let reader = index
             .reader_builder()
@@ -84,6 +108,7 @@ impl Index {
     fn create_doc(&self, title: &ArticleTitle, content: &str) -> tantivy::Document {
         let mut doc = tantivy::Document::new();
         doc.add_text(self.schema.title, title.as_ref());
+        doc.add_text(self.schema.title_segments, title.as_ref());
         doc.add_text(self.schema.content, &content);
         doc
     }
@@ -160,12 +185,12 @@ impl Index {
         Ok(())
     }
 
-    pub fn search(&self, query: &str, ndocs: usize) -> Result<Vec<(String, String)>, Error> {
+    pub fn search(&self, query: &str, ndocs: usize) -> Result<Vec<SearchResult>, Error> {
         let searcher = self.reader.searcher();
 
         let query = QueryParser::for_index(
             searcher.index(),
-            vec![self.schema.title, self.schema.content],
+            vec![self.schema.title_segments, self.schema.content],
         )
         .parse_query(query)
         // FIXME: decide what to do if query is malformed
@@ -181,24 +206,61 @@ impl Index {
             return Ok(found);
         }
 
-        let snippet_gen =
-            tantivy::SnippetGenerator::create(&searcher, &query, self.schema.content)?;
+        let mut title_snippet_gen =
+            SnippetGenerator::create(&searcher, &query, self.schema.title_segments)?;
+        title_snippet_gen.set_max_num_chars(std::usize::MAX);
+        let content_snippet_gen = SnippetGenerator::create(&searcher, &query, self.schema.content)?;
+
         for (_score, addr) in results {
             let doc = searcher.doc(addr)?;
-            let title = doc
-                .get_first(self.schema.title)
+
+            let title_segments = doc
+                .get_first(self.schema.title_segments)
                 .unwrap()
                 .text()
-                .unwrap()
-                .to_owned();
-
+                .unwrap();
             let content = doc.get_first(self.schema.content).unwrap().text().unwrap();
 
-            let snippet = snippet_gen.snippet(content).to_html();
+            let title = String::from(title_segments);
+            let title_text = match title_snippet_gen.snippet(title_segments).to_html() {
+                snippet if snippet.len() == 0 => htmlescape::encode_minimal(&title),
+                snippet => snippet,
+            };
 
-            found.push((title, snippet));
+            let content_text = match content_snippet_gen.snippet(content).to_html() {
+                snippet if snippet.len() == 0 => {
+                    if content.len() < 200 {
+                        content.to_string()
+                    } else {
+                        let mut i = 200;
+                        let elided_content = loop {
+                            // I hope this uses is_char_boundary
+                            match content.get(0..i) {
+                                Some(cont) => break cont,
+                                None => {
+                                    i += 1;
+                                }
+                            }
+                        };
+                        elided_content.to_string()
+                    }
+                }
+                snippet => snippet,
+            };
+
+            found.push(SearchResult {
+                title,
+                title_text,
+                content_text,
+            });
         }
 
         Ok(found)
     }
+}
+
+pub struct SearchResult {
+    pub title: String,
+    pub title_text: String,
+    pub content_text: String,
 }

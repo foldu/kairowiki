@@ -9,9 +9,9 @@
     {% for article in results %}
     <li>
       <div class="title-link">
-        <a href="/wiki/{{ article.0 }}">{{ article.0 }}</a>
+        <a href="/wiki/{{ article.title }}">{{ article.title_text|safe }}</a>
       </div>
-      <div class="article-preview">{{ article.1|safe }}</div>
+      <div class="article-preview">{{ article.content_text|safe }}</div>
     </li>
     {% endfor %}
     </ul>

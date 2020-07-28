@@ -1,4 +1,4 @@
-use crate::{article::ArticleTitle, context::Wiki};
+use crate::{article::ArticleTitle, context::Wiki, index::SearchResult};
 use askama::Template;
 
 #[derive(Template)]
@@ -77,7 +77,7 @@ impl<'a> Register<'a> {
 pub struct SearchResults<'a> {
     pub wiki: Wiki<'a>,
     pub query: &'a str,
-    pub results: &'a [(String, String)],
+    pub results: &'a [SearchResult],
 }
 
 #[derive(Template)]
