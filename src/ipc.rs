@@ -27,6 +27,9 @@ pub async fn send_update(
 
 pub fn listen(sock_path: impl AsRef<Path>) -> Result<impl Stream<Item = Update>, std::io::Error> {
     let sock_path = sock_path.as_ref();
+    if let Some(parent) = sock_path.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
     // NOTE: race condition but unix is garbage anyway
     let _ = std::fs::remove_file(sock_path);
     let listener = UnixListener::bind(sock_path)?;
