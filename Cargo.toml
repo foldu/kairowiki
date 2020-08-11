@@ -38,7 +38,7 @@ thiserror = "1.0.20"
 time = "0.2.16"
 tokio = { version = "0.2.22", features = ["rt-threaded", "sync", "signal", "uds"] }
 tokio-util = { version = "0.3.1", features = ["codec"] }
-tracing = "0.1.17"
+tracing = "0.1.19"
 tracing-futures = "0.2.4"
 tracing-subscriber = "0.2.9"
 tree_magic_mini = "1.0.0"
