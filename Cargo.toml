@@ -45,7 +45,7 @@ tree_magic_mini = "1.0.0"
 url = { version = "2.1.1", features = ["serde"] }
 urlencoding = "1.1.1"
 uuid = { version = "0.8.1", features = ["v4"] }
-warp = { version = "0.2.4", default-features = false, features = ["multipart"] }
+warp = { version = "0.2.5", default-features = false, features = ["multipart"] }
 petgraph = "0.5.1"
 askama_escape = "0.10.1"
 
